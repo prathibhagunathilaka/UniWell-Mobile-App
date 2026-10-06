@@ -41,10 +41,10 @@ export type CounsellorRegistration = {
   password: string;
 };
 
-export const login = (email: string, password: string) =>
-  apiFetch<AuthSession>('/auth/login', {
+export const login = (identifier: string, password: string, requiredRole?: UserRole) =>
+  apiFetch<AuthSession>(requiredRole === 'admin' ? '/auth/admin/login' : '/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   });
 
 export const requestRegistrationOtp = (email: string) =>
