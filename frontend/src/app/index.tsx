@@ -1,98 +1,152 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { InlineMessage, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+export default function IndexRoute() {
+  const { user, loading, sessionNotice, beginAuthFlow } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      console.info('[ROUTER] initial route decision:', user ? getAuthenticatedHome(user) : 'Welcome (unauthenticated)');
+    }
+  }, [loading, user]);
+
+  if (loading) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Loading UniWell...</Text>
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+  if (user) {
+    return <Redirect href={getAuthenticatedHome(user)} />;
+  }
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <View style={styles.page}>
+      <View style={styles.content}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandMark}><Text style={styles.brandLetter}>U</Text></View>
+          <Text style={styles.brandName}>UniWell</Text>
+        </View>
+        <WellbeingIllustration label="A calm, welcoming illustration for university wellbeing" />
+        <Text style={styles.eyebrow}>A little space for you</Text>
+        <Text style={styles.title}>Your Wellbeing Matters</Text>
+        <Text style={styles.subtitle}>
+          Take a moment to check in, find support, and access wellbeing resources designed for university life.
+        </Text>
+        {sessionNotice ? <InlineMessage tone="error">{sessionNotice}</InlineMessage> : null}
+        <Pressable accessibilityRole="button" onPress={beginAuthFlow} style={styles.primaryButton}>
+          <Text style={styles.primaryText}>GET STARTED</Text>
+        </Pressable>
+        <View style={styles.privacyCard}>
+          <Text style={styles.privacyTitle}>A supportive space, on your terms</Text>
+          <Text style={styles.privacyText}>Your check-ins are private to your account and are here to help you reflect.</Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  page: {
     flex: 1,
+    backgroundColor: Colors.background,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.lg,
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    gap: Space.md,
+  },
+  brandRow: {
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: Space.sm,
   },
-  heroSection: {
+  brandMark: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    backgroundColor: Colors.primary,
   },
-  title: {
-    textAlign: 'center',
+  brandLetter: {
+    color: Colors.accent,
+    fontSize: 19,
+    fontWeight: '800',
   },
-  code: {
+  brandName: {
+    color: Colors.accent,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  eyebrow: {
+    color: Colors.primary,
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  title: {
+    color: Colors.accent,
+    fontSize: 31,
+    lineHeight: 38,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: Colors.muted,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  primaryButton: {
+    minHeight: 54,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryText: {
+    color: Colors.accent,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  privacyCard: {
+    backgroundColor: Colors.paleBlue,
+    borderRadius: Radius.md,
+    padding: Space.md,
+    gap: Space.xs,
+  },
+  privacyTitle: {
+    color: Colors.accent,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  privacyText: {
+    color: Colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Space.sm,
+    backgroundColor: Colors.background,
+  },
+  loadingText: {
+    color: Colors.accent,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
