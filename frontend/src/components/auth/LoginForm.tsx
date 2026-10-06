@@ -9,7 +9,7 @@ import { WellbeingColors } from '@/constants/wellbeingTheme';
 
 export function LoginForm({ requiredRole }: { requiredRole?: UserRole }) {
   const { login, sessionNotice } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,14 +18,14 @@ export function LoginForm({ requiredRole }: { requiredRole?: UserRole }) {
   const submit = async () => {
     setError('');
 
-    if (!email.trim() || !password) {
-      setError('Enter your email and password to continue.');
+    if (!identifier.trim() || !password) {
+      setError('Enter your username or email and password to continue.');
       return;
     }
 
     setLoading(true);
     try {
-      await login(email.trim(), password, requiredRole);
+      await login(identifier.trim(), password, requiredRole);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to sign in. Please try again.');
     } finally {
@@ -39,13 +39,13 @@ export function LoginForm({ requiredRole }: { requiredRole?: UserRole }) {
       subtitle={requiredRole === 'admin' ? 'Sign in with your authorized administrator account.' : 'Sign in to continue to UniWell.'}
     >
       <AuthField
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
+        label={requiredRole === 'admin' ? 'Username or email' : 'Email'}
+        value={identifier}
+        onChangeText={setIdentifier}
         autoCapitalize="none"
-        keyboardType="email-address"
-        autoComplete="email"
-        textContentType="emailAddress"
+        keyboardType={requiredRole === 'admin' ? 'default' : 'email-address'}
+        autoComplete={requiredRole === 'admin' ? 'username' : 'email'}
+        textContentType={requiredRole === 'admin' ? 'username' : 'emailAddress'}
       />
       <AuthField
         label="Password"
