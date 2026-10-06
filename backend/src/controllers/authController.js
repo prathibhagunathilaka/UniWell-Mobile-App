@@ -243,19 +243,29 @@ const registerCounsellor = async (req, res) => {
   }
 };
 
-const loginUser = async (req, res) => {
-  const email = normalizeEmail(req.body?.email);
+const authenticateUser = async (req, res, requiredRole = null) => {
+  const identifier = String(req.body?.identifier ?? req.body?.email ?? "").trim().toLowerCase();
   const { password } = req.body || {};
 
-  if (!isValidEmail(email) || typeof password !== "string" || !password) {
-    return res.status(400).json({ message: "Enter a valid email and password." });
+  const validIdentifier = requiredRole === "admin"
+    ? isValidEmail(identifier) || /^[a-z0-9._-]{3,32}$/.test(identifier)
+    : isValidEmail(identifier);
+  if (!validIdentifier || typeof password !== "string" || !password) {
+    return res.status(400).json({
+      message: requiredRole === "admin"
+        ? "Enter a valid username or email and password."
+        : "Enter a valid email and password."
+    });
   }
 
   try {
-    const user = await User.findOne({ email }).select("+password");
+    const lookup = identifier.includes("@")
+      ? { email: normalizeEmail(identifier) }
+      : { username: identifier, role: "admin" };
+    const user = await User.findOne(lookup).select("+password");
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid email or password." });
+    if (!user || (requiredRole && user.role !== requiredRole) || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Invalid username or password." });
     }
 
     if (!user.isActive || user.status === "suspended") {
@@ -277,6 +287,10 @@ const loginUser = async (req, res) => {
     });
   }
 };
+
+const loginUser = (req, res) => authenticateUser(req, res);
+
+const loginAdmin = (req, res) => authenticateUser(req, res, "admin");
 
 const getCurrentUser = async (req, res) => {
   return res.status(200).json({ user: userResponse(req.userRecord) });
@@ -532,6 +546,7 @@ module.exports = {
   registerStudent,
   registerCounsellor,
   loginUser,
+  loginAdmin,
   getCurrentUser,
   requestPasswordReset,
   verifyPasswordResetOtp,
