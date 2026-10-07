@@ -6,6 +6,7 @@ const publicCounsellorFields = "name qualification specialization yearsOfExperie
 
 const listCounsellors = async (req, res) => {
   try {
+    // Only show active counsellors who currently have a future available slot.
     const availableCounsellors = await Appointment.distinct("counsellorId", {
       status: "available",
       startsAt: { $gt: new Date() }
