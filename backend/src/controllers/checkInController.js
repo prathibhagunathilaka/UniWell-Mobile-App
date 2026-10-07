@@ -9,6 +9,7 @@ const moodScoreMap = {
 };
 
 const stressScoreMap = {
+  // Lower reported stress maps to a higher contribution to the wellbeing score.
   "Very Low": 5,
   "Low": 4,
   "Moderate": 3,
