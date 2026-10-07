@@ -46,6 +46,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+  // Complete service checks and seed data before accepting requests.
   await verifySmtpConfiguration();
   await connectDB();
   await seedResources();
