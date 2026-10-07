@@ -1,6 +1,7 @@
 const User = require("../models/User");
 
 const getSupportContacts = (req, res) => {
+  // Contact details come from server settings so the client does not hard-code them.
   return res.status(200).json({
     universityPhone: process.env.UNIVERSITY_SUPPORT_PHONE || "",
     universityWebsite: process.env.UNIVERSITY_SUPPORT_URL || "",
