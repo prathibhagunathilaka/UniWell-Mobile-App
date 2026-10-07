@@ -244,6 +244,7 @@ const registerCounsellor = async (req, res) => {
 };
 
 const authenticateUser = async (req, res, requiredRole = null) => {
+  // The same credential flow serves both regular sign-in and the admin-only route.
   const identifier = String(req.body?.identifier ?? req.body?.email ?? "").trim().toLowerCase();
   const { password } = req.body || {};
 
