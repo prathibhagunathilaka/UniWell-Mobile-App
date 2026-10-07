@@ -37,6 +37,7 @@ const normalizeEmailAddress = (value) => {
 };
 
 const safeSmtpErrorDetails = (error) => {
+  // Remove email addresses and configured secrets before logging SMTP responses.
   let response = typeof error?.response === "string"
     ? error.response.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
     : undefined;

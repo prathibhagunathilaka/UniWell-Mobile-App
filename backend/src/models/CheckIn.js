@@ -35,6 +35,7 @@ const checkInSchema = new mongoose.Schema(
       default: ""
     },
     wellbeingScore: {
+      // Save the calculated result with the answers to preserve each check-in's snapshot.
       type: Number,
       required: true,
       min: 1,

@@ -8,6 +8,7 @@ const User = require("../models/User");
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
 const seedAdmin = async () => {
+  // Startup seeding is deliberately limited to non-production environments.
   if (process.env.NODE_ENV === "production") {
     console.log("Admin startup seeding is disabled in production.");
     return;

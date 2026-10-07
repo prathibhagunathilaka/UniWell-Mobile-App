@@ -56,6 +56,7 @@ const resourceSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      // Seeded resources have no counsellor owner.
       default: null
     },
     isActive: {

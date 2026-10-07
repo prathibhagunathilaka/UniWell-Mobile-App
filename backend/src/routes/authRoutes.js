@@ -58,6 +58,7 @@ const loginAccountLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: (req) => {
+    // Combine the network address with the normalized account identifier for login limits.
     const identifier = String(req.body?.identifier ?? req.body?.email ?? "").trim().toLowerCase();
     return `${ipKeyGenerator(req.ip)}:${identifier || "unknown"}`;
   },

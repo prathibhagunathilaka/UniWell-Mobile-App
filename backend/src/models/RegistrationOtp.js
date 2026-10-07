@@ -44,4 +44,5 @@ const registrationOtpSchema = new mongoose.Schema(
 
 registrationOtpSchema.index({ documentExpiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// MongoDB removes expired OTP challenges and verification records using this TTL index.
 module.exports = mongoose.model("RegistrationOtp", registrationOtpSchema);

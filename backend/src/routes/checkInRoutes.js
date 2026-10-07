@@ -4,6 +4,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// Every check-in endpoint is limited to an authenticated student.
 router.use(protect);
 router.use(authorize("student"));
 

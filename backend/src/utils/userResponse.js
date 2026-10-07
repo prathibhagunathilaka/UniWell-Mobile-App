@@ -4,6 +4,7 @@ const userResponse = (user) => ({
   email: user.email,
   role: user.role,
   status: user.status,
+  // Student-only profile fields are omitted from non-student responses.
   ...(user.role === "student"
     ? {
         studentId: user.studentId,

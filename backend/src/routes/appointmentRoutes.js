@@ -11,6 +11,8 @@ const {
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+// Authentication is shared here; each route below applies its own role restriction.
 router.use(protect);
 
 router.post("/", authorize("student"), bookAppointment);

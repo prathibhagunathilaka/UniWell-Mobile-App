@@ -25,6 +25,7 @@ export type CheckInRecord = {
 export type CheckInTrendPoint = Pick<CheckInRecord, '_id' | 'createdAt' | 'wellbeingScore'>;
 
 export const createCheckIn = async (payload: CheckInPayload) => {
+  // Bound submissions that take too long, then clear the timer regardless of outcome.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CHECK_IN_REQUEST_TIMEOUT_MS);
 

@@ -10,6 +10,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// All resource reads and edits require authentication, with roles checked per route.
 router.use(protect);
 
 router.get("/", authorize("student", "counsellor"), getResources);

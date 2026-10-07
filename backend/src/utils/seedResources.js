@@ -9,6 +9,7 @@ const seedResources = async () => {
 
     const count = await Resource.countDocuments();
 
+    // Preserve any resources already in the database instead of reseeding them.
     if (count > 0) {
       return;
     }

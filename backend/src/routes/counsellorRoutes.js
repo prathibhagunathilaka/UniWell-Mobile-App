@@ -9,6 +9,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// Sign-in is required throughout; endpoint-specific roles are enforced below.
 router.use(protect);
 router.get("/", authorize("student"), listCounsellors);
 router.get("/me", authorize("counsellor"), (req, res) => res.status(200).json({

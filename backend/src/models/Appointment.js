@@ -48,6 +48,7 @@ const appointmentSchema = new mongoose.Schema(
 appointmentSchema.index(
   { counsellorId: 1, slotKeys: 1 },
   {
+    // Reserve each time key uniquely while the appointment still occupies the slot.
     unique: true,
     partialFilterExpression: { reservesSlot: true }
   }

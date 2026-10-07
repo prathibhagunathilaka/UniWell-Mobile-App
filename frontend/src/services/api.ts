@@ -52,6 +52,7 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
     headers,
   });
 
+  // Let the auth provider clear the session when an authenticated request expires.
   if (response.status === 401 && token && !isLoginRequest && unauthorizedHandler) {
     await unauthorizedHandler();
   }

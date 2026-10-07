@@ -34,6 +34,7 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // Token versions let account actions invalidate previously issued access tokens.
     if (decoded.ver !== user.tokenVersion) {
       return res.status(401).json({
         message: "Invalid or expired token"
