@@ -210,6 +210,7 @@ const verifyProfileOtp = async (req, res) => {
 };
 
 const validateActionToken = (verificationToken, action, userId) => {
+  // A verified token is usable only for the account and action it was issued for.
   if (typeof verificationToken !== "string" || !verificationToken) {
     return null;
   }
