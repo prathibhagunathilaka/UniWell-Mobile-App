@@ -34,6 +34,8 @@ export class ApiError extends Error {
 export const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const token = getAuthToken();
   const headers = new Headers(options.headers || {});
+  const isLoginRequest = path === '/auth/login' || path === '/auth/admin/login';
+  const isOtpRequest = path.includes('otp') || path === '/auth/forgot-password' || path === '/auth/reset-password';
 
   headers.set('Accept', 'application/json');
 
@@ -50,7 +52,7 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
     headers,
   });
 
-  if (response.status === 401 && unauthorizedHandler) {
+  if (response.status === 401 && token && !isLoginRequest && unauthorizedHandler) {
     await unauthorizedHandler();
   }
 
@@ -58,19 +60,28 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
   const responseBody = contentType.includes('application/json') ? await response.json() : await response.text();
 
   if (!response.ok) {
-    const isOtpRequest = path === '/auth/forgot-password' || path === '/auth/profile/request-otp';
+    const responseMessage = typeof responseBody === 'string' ? '' : responseBody?.message;
     const fallbackMessages: Record<number, string> = {
       400: 'Please check your information and try again.',
       401: 'Your session has expired. Please sign in again.',
-      404: 'Verification service is currently unavailable.',
+      404: isOtpRequest
+        ? 'Verification service is currently unavailable.'
+        : isLoginRequest
+          ? 'Sign-in service is currently unavailable. Please try again.'
+          : 'The requested service is unavailable. Please try again.',
+      429: 'Too many attempts. Please try again later.',
     };
     const message = isOtpRequest && response.status === 503
       ? 'Unable to send verification code. Please try again.'
-      : typeof responseBody === 'string'
-        ? fallbackMessages[response.status] || (response.status >= 500
-          ? 'The service is temporarily unavailable. Please try again.'
-          : 'Request failed. Please try again.')
-        : fallbackMessages[response.status] || responseBody?.message || 'Request failed';
+      : response.status === 404
+        ? fallbackMessages[404]
+        : response.status === 401 && token && !isLoginRequest
+          ? fallbackMessages[401]
+          : typeof responseMessage === 'string' && responseMessage
+            ? responseMessage
+            : fallbackMessages[response.status] || (response.status >= 500
+              ? 'The service is temporarily unavailable. Please try again.'
+              : 'Request failed. Please try again.');
     throw new ApiError(message, response.status);
   }
 

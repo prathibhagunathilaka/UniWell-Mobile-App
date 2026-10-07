@@ -35,7 +35,7 @@ export function AuthRouteGuard({ children }: PropsWithChildren) {
 
   if (requiredRole && (!user || !token)) {
     console.info('[ROUTER] protected route denied:', pathname, 'authenticated:', isAuthenticated);
-    return <Redirect href="/" />;
+    return <Redirect href="/auth/login" />;
   }
 
   if (requiredRole && user && user.role !== requiredRole) {

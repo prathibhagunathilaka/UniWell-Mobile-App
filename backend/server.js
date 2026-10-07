@@ -13,6 +13,7 @@ const adminRoutes = require("./src/routes/adminRoutes");
 const supportRoutes = require("./src/routes/supportRoutes");
 const { seedResources } = require("./src/utils/seedResources");
 const { verifySmtpConfiguration } = require("./src/utils/authOtp");
+const { seedAdmin } = require("./src/utils/createAdmin");
 
 const app = express();
 
@@ -48,6 +49,7 @@ const startServer = async () => {
   await verifySmtpConfiguration();
   await connectDB();
   await seedResources();
+  await seedAdmin();
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

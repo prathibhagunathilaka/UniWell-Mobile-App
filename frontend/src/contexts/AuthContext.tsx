@@ -32,7 +32,7 @@ type AuthContextValue = {
   authFlowStarted: boolean;
   beginAuthFlow: () => void;
   updateUser: (user: AuthUser) => void;
-  login: (email: string, password: string, requiredRole?: UserRole) => Promise<AuthUser>;
+  login: (identifier: string, password: string, requiredRole?: UserRole) => Promise<AuthUser>;
   registerStudent: (registration: StudentRegistration, verificationToken: string) => Promise<AuthUser>;
   registerCounsellor: (registration: CounsellorRegistration, verificationToken: string) => Promise<string>;
   logout: () => Promise<void>;
@@ -155,8 +155,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [clearSession, signOut]);
 
-  const login = useCallback(async (email: string, password: string, requiredRole?: UserRole) => {
-    const session = await loginRequest(email, password);
+  const login = useCallback(async (identifier: string, password: string, requiredRole?: UserRole) => {
+    const session = await loginRequest(identifier, password, requiredRole);
     if (requiredRole && session.user.role !== requiredRole) {
       throw new Error(`This sign-in page is for ${requiredRole} accounts.`);
     }
