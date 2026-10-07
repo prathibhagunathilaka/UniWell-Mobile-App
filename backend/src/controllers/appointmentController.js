@@ -24,6 +24,7 @@ const createAvailability = async (req, res) => {
       counsellorId: req.user.id,
       startsAt,
       durationMinutes,
+      // Two 15-minute keys let the unique index detect overlapping 30-minute slots.
       slotKeys: [
         new Date(startsAt.getTime()),
         new Date(startsAt.getTime() + 15 * 60 * 1000)
