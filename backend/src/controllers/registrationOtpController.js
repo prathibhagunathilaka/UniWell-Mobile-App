@@ -37,6 +37,7 @@ const requestRegistrationOtp = async (req, res) => {
 
   const now = new Date();
   const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+  // Store a keyed hash while retaining the plaintext only for email delivery.
   const otpHash = createOtpHash(email, `registration:${otp}`);
   let challenge;
 
