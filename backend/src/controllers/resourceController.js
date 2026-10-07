@@ -15,6 +15,7 @@ const RESOURCE_CATEGORIES = [
 const getResources = async (req, res) => {
   try {
     const { category } = req.query;
+    // Counsellors see their own resources; students see all active resources.
     const query = req.user.role === "counsellor"
       ? { createdBy: req.user.id, isActive: true }
       : { isActive: true };
