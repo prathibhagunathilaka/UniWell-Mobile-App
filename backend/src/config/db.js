@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const connectDB = async () => {
   try {
     if (!process.env.MONGODB_URI) {
+      // Let the API start even when database-backed features are not configured.
       console.warn("MONGODB_URI is not configured. Skipping MongoDB connection.");
       return;
     }
