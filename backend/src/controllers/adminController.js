@@ -3,6 +3,7 @@ const User = require("../models/User");
 
 const getPendingCounsellors = async (req, res) => {
   try {
+    // Return only the details needed to review pending applications, oldest first.
     const counsellors = await User.find({ role: "counsellor", status: "pending" })
       .select("name email phoneNumber qualification specialization yearsOfExperience createdAt")
       .sort({ createdAt: 1 })
