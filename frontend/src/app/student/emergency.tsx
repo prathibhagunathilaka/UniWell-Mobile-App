@@ -1,7 +1,7 @@
 import { Href, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
   PageHeading,
@@ -9,7 +9,7 @@ import {
   WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
-import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 
 const sections: {
   icon: string;
@@ -71,6 +71,16 @@ export default function EmergencySupportScreen() {
         </View>
       </View>
 
+      <SurfaceCard style={styles.gentle}>
+        <Text style={styles.gentleTitle}>Not ready to call? Start gently.</Text>
+        <Text style={styles.gentleText}>Reading, writing to someone you trust or booking a quiet session are all valid first steps.</Text>
+        <View style={styles.gentleRow}>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/student/resources')} style={styles.gentleButton}><Text style={styles.gentleLabel}>Read self-help</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/student/trusted-person')} style={styles.gentleButton}><Text style={styles.gentleLabel}>Message someone I trust</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/student/counselling')} style={styles.gentleButton}><Text style={styles.gentleLabel}>Book a counsellor</Text></Pressable>
+        </View>
+      </SurfaceCard>
+
       {sections.map((section) => {
         const tone = section.tone === 'urgent' ? styles.urgentCard : section.tone === 'blue' ? styles.blueCard : styles.coralCard;
         const iconTone = section.tone === 'urgent' ? styles.urgentIcon : section.tone === 'blue' ? styles.blueIcon : styles.coralIcon;
@@ -105,6 +115,12 @@ export default function EmergencySupportScreen() {
 }
 
 const styles = StyleSheet.create({
+  gentle: { gap: Space.sm, backgroundColor: Colors.paleBlue },
+  gentleTitle: { color: Colors.accent, fontSize: 17, fontWeight: '800' },
+  gentleText: { color: Colors.muted, fontSize: 14 },
+  gentleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
+  gentleButton: { minHeight: 44, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  gentleLabel: { color: Colors.accent, fontSize: 13, fontWeight: '800' },
   page: {
     gap: Space.md,
   },

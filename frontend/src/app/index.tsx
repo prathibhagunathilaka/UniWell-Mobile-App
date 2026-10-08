@@ -2,9 +2,9 @@ import { Redirect } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { InlineMessage, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
 
 export default function IndexRoute() {
   const { user, loading, sessionNotice, beginAuthFlow } = useAuth();

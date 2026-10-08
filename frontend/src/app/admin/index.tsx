@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { QuickLinks } from '@/components/wellbeing/QuickLinks';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getPendingCounsellors, updateCounsellorApproval } from '@/services/counsellingService';
@@ -61,6 +62,7 @@ export default function AdminDashboardScreen() {
         <Text style={styles.brand}>UniWell · Administration</Text>
         <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.logout}><Text style={styles.logoutText}>Log out</Text></Pressable>
       </View>
+      <QuickLinks links={[{ label: 'Usage reports', detail: 'Volume, peak periods, completion, workload', href: '/admin/reports' }]} />
       <PageHeading title="Counsellor approvals" subtitle="Review counsellor registration details before directory access is enabled." />
       <InlineMessage tone="error">{error}</InlineMessage>
       <InlineMessage tone="success">{message}</InlineMessage>

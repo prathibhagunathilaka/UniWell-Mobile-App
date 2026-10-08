@@ -10,8 +10,8 @@ import {
   View,
 } from 'react-native';
 
-import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
 import { WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
+import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
 
 export const PRIMARY = Colors.primary;
 export const SECONDARY = Colors.secondary;

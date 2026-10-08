@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text } from 'react-native';
 
-import { AuthField, AuthMessage, AuthButton } from '@/components/auth/AuthUI';
+import { AuthButton, AuthField, AuthMessage } from '@/components/auth/AuthUI';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingSpace as Space } from '@/constants/wellbeingTheme';

@@ -1,7 +1,7 @@
 import { Link, useLocalSearchParams } from 'expo-router';
 import { DimensionValue, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
   PageHeading,
@@ -11,7 +11,7 @@ import {
   WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
-import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 
 const reflections: Record<string, string> = {
   'Needs Support': 'It sounds like today may feel especially heavy. Consider reaching out to someone you trust or exploring support when you feel ready.',

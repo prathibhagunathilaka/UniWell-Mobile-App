@@ -8,6 +8,8 @@ export type CounsellorProfile = {
   specialization: string;
   yearsOfExperience: number;
   phoneNumber?: string;
+  nextAvailableAt?: string | null;
+  openSlots?: number;
 };
 
 export type CounsellorSlot = {
@@ -22,6 +24,8 @@ export type AppointmentRecord = {
   durationMinutes: number;
   sessionType: 'in-person' | 'online' | 'phone';
   status: 'available' | 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  shareCheckIn?: boolean;
+  feedbackRating?: number | null;
   counsellorId?: CounsellorProfile;
   studentId?: {
     _id: string;
@@ -67,11 +71,67 @@ export const createAvailability = (startsAt: string, durationMinutes: number) =>
 export const deleteAvailability = (id: string) =>
   apiFetch<{ message: string }>(`/appointments/availability/${id}`, { method: 'DELETE' });
 
-export const createAppointment = (slotId: string, sessionType: AppointmentRecord['sessionType']) =>
+export const createAppointment = (
+  slotId: string,
+  sessionType: AppointmentRecord['sessionType'],
+  shareCheckIn = false,
+) =>
   apiFetch<{ appointment: AppointmentRecord }>('/appointments', {
     method: 'POST',
-    body: JSON.stringify({ slotId, sessionType }),
+    body: JSON.stringify({ slotId, sessionType, shareCheckIn }),
   });
+
+export const submitSessionFeedback = (id: string, rating: number) =>
+  apiFetch<{ appointment: { feedbackRating: number } }>(`/appointments/${id}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify({ rating }),
+  });
+
+export const getStudentAppointmentCalendar = (id: string) =>
+  apiFetch<{ filename: string; ics: string }>(`/appointments/${id}/calendar`);
+
+export const cancelStudentAppointment = (id: string) =>
+  apiFetch<{ appointment: AppointmentRecord }>(`/appointments/${id}/cancel`, { method: 'PATCH' });
+
+export type BulkAvailabilityResult = {
+  created: { _id: string; startsAt: string }[];
+  skipped: { startsAt: string; reason: string }[];
+};
+
+export const createAvailabilityBulk = (slots: string[]) =>
+  apiFetch<BulkAvailabilityResult>('/appointments/availability/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ slots }),
+  });
+
+export type SharedCheckIn = {
+  mood: string;
+  stressLevel: string;
+  sleepQuality: string;
+  studyCoping: string;
+  wellbeingScore: number;
+  wellbeingLevel: string;
+  createdAt: string;
+};
+
+export const getCounsellorAppointment = (id: string) =>
+  apiFetch<{ appointment: AppointmentRecord & { shareCheckIn?: boolean }; sharedCheckIn: SharedCheckIn | null }>(
+    `/appointments/counsellor/${id}`,
+  );
+
+export type CalendarSyncStatus = {
+  enabled: boolean;
+  feedUrl: string | null;
+  webcalUrl: string | null;
+  lastFetchedAt: string | null;
+  upcomingBookings?: number;
+  pendingBookings?: number;
+};
+
+export const getCalendarSyncStatus = () => apiFetch<CalendarSyncStatus>('/calendar/status');
+export const createCalendarLink = () => apiFetch<CalendarSyncStatus>('/calendar/token', { method: 'POST' });
+export const disableCalendarLink = () => apiFetch<{ message: string }>('/calendar/token', { method: 'DELETE' });
+export const exportCalendar = () => apiFetch<{ filename: string; ics: string }>('/calendar/export');
 
 export const getStudentAppointments = () =>
   apiFetch<{ appointments: AppointmentRecord[] }>('/appointments/mine');

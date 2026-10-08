@@ -40,6 +40,39 @@ const appointmentSchema = new mongoose.Schema(
     reservesSlot: {
       type: Boolean,
       default: true
+    },
+    // --- NEW fields ---
+    shareCheckIn: {
+      type: Boolean,
+      default: false
+    },
+    cancelledBy: {
+      type: String,
+      enum: ["student", "counsellor", null],
+      default: null
+    },
+    cancelledAt: {
+      type: Date,
+      default: null
+    },
+    // Post-session feedback (1-5), used only in anonymised satisfaction reporting.
+    feedbackRating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null
+    },
+    feedbackAt: {
+      type: Date,
+      default: null
+    },
+    reminder24Sent: {
+      type: Boolean,
+      default: false
+    },
+    reminder1hSent: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }
@@ -53,6 +86,7 @@ appointmentSchema.index(
   }
 );
 appointmentSchema.index({ studentId: 1, startsAt: 1 });
+appointmentSchema.index({ status: 1, startsAt: 1 });
 appointmentSchema.index(
   { studentId: 1, slotKeys: 1 },
   {

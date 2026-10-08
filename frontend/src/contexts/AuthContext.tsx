@@ -10,17 +10,17 @@ import {
   useState,
 } from 'react';
 
+import { ApiError, registerAuthTokenProvider, registerUnauthorizedHandler } from '@/services/api';
 import {
   AuthUser,
   CounsellorRegistration,
+  getCurrentUser,
   login as loginRequest,
   registerCounsellor as registerCounsellorRequest,
   registerStudent as registerStudentRequest,
   StudentRegistration,
   UserRole,
-  getCurrentUser,
 } from '@/services/authService';
-import { ApiError, registerAuthTokenProvider, registerUnauthorizedHandler } from '@/services/api';
 import { readStoredAuthToken, removeStoredAuthToken, storeAuthToken } from '@/services/authStorage';
 
 type AuthContextValue = {

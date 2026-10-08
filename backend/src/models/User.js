@@ -68,6 +68,17 @@ const userSchema = new mongoose.Schema(
       min: 0,
       max: 80
     },
+    // NEW: secret token for the counsellor's private calendar (.ics) subscription feed.
+    calendarToken: {
+      type: String,
+      select: false,
+      index: true,
+      sparse: true
+    },
+    calendarLastFetchedAt: {
+      type: Date,
+      default: null
+    },
     trustedPerson: {
       name: {
         type: String,

@@ -1,9 +1,9 @@
-import { useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
   InlineMessage,
@@ -14,7 +14,7 @@ import {
   WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
-import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getResourceById, ResourceItem } from '@/services/resourceService';
 
 const iconForCategory = (category: string) => {

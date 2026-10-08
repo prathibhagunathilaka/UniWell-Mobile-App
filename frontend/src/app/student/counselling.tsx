@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
@@ -11,6 +11,8 @@ export default function CounsellingDirectoryScreen() {
   const [counsellors, setCounsellors] = useState<CounsellorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [soonestFirst, setSoonestFirst] = useState(false);
 
   const loadCounsellors = useCallback(async () => {
     setLoading(true);
@@ -29,6 +31,24 @@ export default function CounsellingDirectoryScreen() {
     void Promise.resolve().then(loadCounsellors);
   }, [loadCounsellors]);
 
+  // NEW: search by name/specialisation and sort by soonest availability.
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = counsellors.filter((c) => !q || `${c.name} ${c.specialization} ${c.qualification}`.toLowerCase().includes(q));
+    return soonestFirst
+      ? [...filtered].sort((a, b) => new Date(a.nextAvailableAt || '9999').getTime() - new Date(b.nextAvailableAt || '9999').getTime())
+      : filtered;
+  }, [counsellors, query, soonestFirst]);
+
+  const nextLabel = (iso?: string | null) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const day = d.toDateString() === today.toDateString() ? 'Today' : d.toDateString() === tomorrow.toDateString() ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    return `Next: ${day}, ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+  };
+
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
       <ScreenBackButton fallback="/student/dashboard" label="Dashboard" />
@@ -39,6 +59,22 @@ export default function CounsellingDirectoryScreen() {
           <Text style={styles.chevron}>›</Text>
         </Pressable>
       </Link>
+
+      {counsellors.length > 1 ? (
+        <View style={styles.tools}>
+          <TextInput
+            accessibilityLabel="Search counsellors"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search by name or topic, e.g. anxiety"
+            placeholderTextColor={Colors.muted}
+            style={styles.search}
+          />
+          <Pressable accessibilityRole="switch" accessibilityState={{ checked: soonestFirst }} onPress={() => setSoonestFirst((v) => !v)} style={[styles.sortChip, soonestFirst && styles.sortChipOn]}>
+            <Text style={[styles.sortText, soonestFirst && styles.sortTextOn]}>{soonestFirst ? '✓ Soonest available first' : 'Sort by soonest available'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {loading ? <LoadingState label="Loading approved counsellors..." /> : null}
       {error ? (
@@ -55,10 +91,13 @@ export default function CounsellingDirectoryScreen() {
           <Text style={styles.emptyText}>Please check back later or explore the available self-help resources.</Text>
         </SurfaceCard>
       ) : null}
-      {!loading && !error && counsellors.length > 0 ? (
+      {!loading && !error && counsellors.length > 0 && visible.length === 0 ? (
+        <SurfaceCard style={styles.empty}><Text style={styles.emptyText}>No counsellors match “{query}”. Try a shorter word.</Text></SurfaceCard>
+      ) : null}
+      {!loading && !error && visible.length > 0 ? (
         <View style={styles.list}>
-          <SectionHeading title="Approved counsellors" detail={`${counsellors.length} available profile${counsellors.length === 1 ? '' : 's'}`} />
-          {counsellors.map((counsellor) => (
+          <SectionHeading title="Approved counsellors" detail={`${visible.length} available profile${visible.length === 1 ? '' : 's'}`} />
+          {visible.map((counsellor) => (
             <Link
               key={counsellor._id}
               href={{ pathname: '/student/counselling/[id]', params: { id: counsellor._id } }}
@@ -70,6 +109,7 @@ export default function CounsellingDirectoryScreen() {
                   <Text style={styles.name}>{counsellor.name}</Text>
                   <Text style={styles.specialization}>{counsellor.specialization}</Text>
                   <Text style={styles.qualification}>{counsellor.qualification} · {counsellor.yearsOfExperience} years of experience</Text>
+                  {counsellor.nextAvailableAt ? <Text style={styles.next}>{nextLabel(counsellor.nextAvailableAt)}</Text> : null}
                 </View>
                 <Text style={styles.chevron}>›</Text>
               </Pressable>
@@ -99,6 +139,13 @@ const styles = StyleSheet.create({
   empty: { gap: Space.xs },
   emptyTitle: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
   emptyText: { color: Colors.muted, fontSize: 14, lineHeight: 21 },
+  tools: { gap: Space.sm },
+  search: { minHeight: 48, paddingHorizontal: Space.md, borderRadius: Radius.md, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, color: Colors.accent, fontSize: 15 },
+  sortChip: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: Space.md, borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  sortChipOn: { backgroundColor: Colors.paleCoral, borderColor: Colors.primary },
+  sortText: { color: Colors.accent, fontSize: 13, fontWeight: '700' },
+  sortTextOn: { color: Colors.accent },
+  next: { color: Colors.success, fontSize: 12, fontWeight: '800' },
   list: { gap: Space.sm },
   card: {
     flexDirection: 'row',

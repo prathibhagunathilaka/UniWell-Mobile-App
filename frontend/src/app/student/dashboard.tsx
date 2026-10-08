@@ -1,11 +1,8 @@
+import { NotificationBell } from '@/components/wellbeing/NotificationBell';
 import { Link, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useAuth } from '@/contexts/AuthContext';
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
-import { CheckInRecord, CheckInTrendPoint, getCheckInTrend, getCheckIns } from '@/services/checkinService';
-import { AppointmentRecord, getStudentAppointments } from '@/services/counsellingService';
 import {
   Eyebrow,
   InlineMessage,
@@ -17,6 +14,10 @@ import {
   WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { useAuth } from '@/contexts/AuthContext';
+import { CheckInRecord, CheckInTrendPoint, getCheckInTrend, getCheckIns } from '@/services/checkinService';
+import { AppointmentRecord, getStudentAppointments } from '@/services/counsellingService';
 
 const quickActions = [
   {
@@ -166,6 +167,7 @@ export default function StudentDashboardScreen() {
           <View style={styles.brandMark}><Text style={styles.brandLetter}>U</Text></View>
           <Text style={styles.brandName}>UniWell</Text>
         </View>
+        <NotificationBell role="student" />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open student profile"

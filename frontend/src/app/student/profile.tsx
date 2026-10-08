@@ -2,7 +2,16 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import {
+  AuthButton,
+  AuthField,
+  AuthLinkText,
+  AuthMessage,
+  AuthPage,
+} from '@/components/auth/AuthUI';
+import { SurfaceCard } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   deleteStudentAccount,
   requestProfileOtp,
@@ -10,15 +19,6 @@ import {
   updateStudentProfile,
   verifyProfileOtp,
 } from '@/services/authService';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  AuthButton,
-  AuthField,
-  AuthMessage,
-  AuthPage,
-  AuthLinkText,
-} from '@/components/auth/AuthUI';
-import { SurfaceCard } from '@/components/wellbeing/WellbeingUI';
 
 type ProfileAction = 'update' | 'delete';
 
