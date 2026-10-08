@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
   InlineMessage,
@@ -13,7 +13,7 @@ import {
   WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
-import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
+import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getResources, ResourceItem } from '@/services/resourceService';
 
 const categories = [

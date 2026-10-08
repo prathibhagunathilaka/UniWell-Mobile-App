@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AuthButton, AuthField } from '@/components/auth/AuthUI';
+import { QuickLinks } from '@/components/wellbeing/QuickLinks';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
@@ -43,7 +44,7 @@ const emptyResource: CounsellorResourceInput = {
 };
 
 export default function CounsellorDashboardScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<CounsellorProfile | null>(null);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [resources, setResources] = useState<CounsellorResource[]>([]);
@@ -188,14 +189,28 @@ export default function CounsellorDashboardScreen() {
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
       <View style={styles.topBar}>
-        <View>
-          <Text style={styles.brand}>UniWell · Counsellor</Text>
-          <Text style={styles.welcome}>Hello, {user?.name || profile?.name || 'Counsellor'}</Text>
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.logout}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </Pressable>
+        <Text style={styles.welcome}>Hello, {user?.name || profile?.name || 'Counsellor'}</Text>
       </View>
+      <QuickLinks links={[
+        { label: 'Calendar', detail: 'Week view of all bookings', href: '/counsellor/calendar' },
+        { label: 'Availability', detail: 'Publish and repeat slots', href: '/counsellor/availability' },
+        { label: 'Booking sync', detail: 'Google / Apple / Outlook link', href: '/counsellor/sync' },
+        { label: 'Notifications', detail: 'New bookings and reminders', href: '/counsellor/notifications' },
+      ]} />
+      {!loading ? (() => {
+        const start = new Date(); start.setHours(0, 0, 0, 0);
+        const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+        const today = appointments.filter((a) => a.studentId && ['pending', 'confirmed'].includes(a.status) && new Date(a.startsAt) >= start && new Date(a.startsAt) < end);
+        const waiting = appointments.filter((a) => a.status === 'pending' && new Date(a.startsAt) > new Date()).length;
+        const next = appointments.filter((a) => a.studentId && ['pending', 'confirmed'].includes(a.status) && new Date(a.startsAt) > new Date()).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0];
+        return (
+          <SurfaceCard style={styles.today}>
+            <Text style={styles.todayTitle}>Today</Text>
+            <Text style={styles.todayLine}>{today.length} session{today.length === 1 ? '' : 's'} scheduled{waiting ? ` · ${waiting} waiting for your confirmation` : ''}</Text>
+            <Text style={styles.todaySub}>{next ? `Next: ${new Date(next.startsAt).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })} with ${next.studentId?.name || 'a student'}` : 'No upcoming sessions yet.'}</Text>
+          </SurfaceCard>
+        );
+      })() : null}
       <PageHeading title="Counsellor workspace" subtitle="Manage your profile, availability, appointments, and student resources." />
       {loading ? <LoadingState label="Loading your workspace..." /> : null}
       <InlineMessage tone="error">{error}</InlineMessage>
@@ -290,12 +305,13 @@ export default function CounsellorDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  today: { gap: 2, backgroundColor: Colors.paleBlue },
+  todayTitle: { color: Colors.muted, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
+  todayLine: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  todaySub: { color: Colors.muted, fontSize: 13 },
   page: { gap: Space.md },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
-  brand: { color: Colors.primary, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   welcome: { color: Colors.accent, fontSize: 20, fontWeight: '800' },
-  logout: { minHeight: 42, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
-  logoutText: { color: Colors.accent, fontWeight: '800', fontSize: 13 },
   form: { gap: Space.sm },
   categoryRow: { flexDirection: 'row', gap: Space.xs, flexWrap: 'wrap' },
   category: { paddingHorizontal: Space.sm, paddingVertical: Space.xs, borderRadius: Radius.pill, backgroundColor: Colors.paleBlue },

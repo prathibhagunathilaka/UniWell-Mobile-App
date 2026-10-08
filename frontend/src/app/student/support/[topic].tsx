@@ -2,8 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { InlineMessage, PageHeading, PrimaryButton, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
+import { InlineMessage, PageHeading, PrimaryButton, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getSupportContacts, SupportContacts } from '@/services/counsellingService';
 

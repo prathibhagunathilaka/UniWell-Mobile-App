@@ -1,7 +1,7 @@
-import { useAuth } from '@/contexts/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { QuickLinks } from '@/components/wellbeing/QuickLinks';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getPendingCounsellors, updateCounsellorApproval } from '@/services/counsellingService';
@@ -17,7 +17,6 @@ type PendingCounsellor = {
 };
 
 export default function AdminDashboardScreen() {
-  const { logout } = useAuth();
   const [counsellors, setCounsellors] = useState<PendingCounsellor[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState('');
@@ -57,10 +56,7 @@ export default function AdminDashboardScreen() {
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
-      <View style={styles.topBar}>
-        <Text style={styles.brand}>UniWell · Administration</Text>
-        <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.logout}><Text style={styles.logoutText}>Log out</Text></Pressable>
-      </View>
+      <QuickLinks links={[{ label: 'Usage reports', detail: 'Volume, peak periods, completion, workload', href: '/admin/reports' }]} />
       <PageHeading title="Counsellor approvals" subtitle="Review counsellor registration details before directory access is enabled." />
       <InlineMessage tone="error">{error}</InlineMessage>
       <InlineMessage tone="success">{message}</InlineMessage>
@@ -92,10 +88,6 @@ export default function AdminDashboardScreen() {
 
 const styles = StyleSheet.create({
   page: { gap: Space.md },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brand: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
-  logout: { minHeight: 42, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
-  logoutText: { color: Colors.accent, fontSize: 13, fontWeight: '800' },
   card: { gap: Space.xs },
   name: { color: Colors.accent, fontSize: 17, fontWeight: '800' },
   detail: { color: Colors.muted, fontSize: 13 },

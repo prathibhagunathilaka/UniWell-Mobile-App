@@ -1,7 +1,9 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 
 import { AuthRouteGuard } from '@/components/auth/AuthRouteGuard';
+import { AppTopBar } from '@/components/navigation/AppTopBar';
+import { RoleBottomNav } from '@/components/navigation/RoleBottomNav';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export default function RootLayout() {
@@ -11,9 +13,15 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <AuthRouteGuard>
-          <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-          </Stack>
+          <View style={{ flex: 1 }}>
+            <AppTopBar />
+            <View style={{ flex: 1 }}>
+              <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+              </Stack>
+            </View>
+            <RoleBottomNav />
+          </View>
         </AuthRouteGuard>
       </AuthProvider>
     </ThemeProvider>

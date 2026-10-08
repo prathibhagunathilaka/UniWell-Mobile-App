@@ -11,7 +11,7 @@ const listCounsellors = async (req, res) => {
       status: "available",
       startsAt: { $gt: new Date() }
     });
-    const counsellors = await User.find({
+    const counsellorDocs = await User.find({
       role: "counsellor",
       status: "active",
       isActive: true,
@@ -20,6 +20,18 @@ const listCounsellors = async (req, res) => {
       .select(publicCounsellorFields)
       .sort({ name: 1 })
       .lean();
+
+    // NEW: earliest open slot per counsellor so students can pick the soonest option.
+    const next = await Appointment.aggregate([
+      { $match: { status: "available", startsAt: { $gt: new Date() }, counsellorId: { $in: availableCounsellors } } },
+      { $group: { _id: "$counsellorId", nextAvailableAt: { $min: "$startsAt" }, openSlots: { $sum: 1 } } }
+    ]);
+    const nextMap = new Map(next.map((n) => [String(n._id), n]));
+    const counsellors = counsellorDocs.map((c) => ({
+      ...c,
+      nextAvailableAt: nextMap.get(String(c._id))?.nextAvailableAt || null,
+      openSlots: nextMap.get(String(c._id))?.openSlots || 0
+    }));
 
     return res.status(200).json({ counsellors });
   } catch (error) {
