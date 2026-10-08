@@ -15,6 +15,7 @@ import {
   getCounsellorAppointments,
 } from '@/services/counsellingService';
 import { addAppointmentToDeviceCalendar } from '@/utils/deviceCalendar';
+import { saveAndShareTextFile } from '@/utils/shareFile';
 
 // FR4 "Booking Sync Confirmation": the counsellor taps "Add to my calendar" and the phone's own
 // calendar opens with the booking pre-filled. They choose any account (Google, iCloud, Outlook...)
@@ -97,8 +98,8 @@ export default function CounsellorSyncScreen() {
   const shareLink = () => status?.feedUrl && Share.share({ message: status.feedUrl, title: 'UniWell calendar link' });
   const shareIcs = () => run(async () => {
     const file = await exportCalendar();
-    await Share.share({ message: file.ics, title: file.filename });
-  }, 'Calendar exported.');
+    await saveAndShareTextFile(file.filename, file.ics, 'text/calendar', 'public.calendar-event');
+  }, 'Calendar file ready. Open it with your calendar app, or save it to Files / Drive.');
 
   const remaining = upcoming.filter((a) => !added[a._id]).length;
 

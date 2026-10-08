@@ -39,9 +39,9 @@ const TABS: Record<Role, Tab[]> = {
     { key: 'resources', label: 'Resources', icon: 'library-outline', iconActive: 'library', href: '/counsellor/resources', match: ['/counsellor/resources'] },
   ],
   admin: [
-    { key: 'approvals', label: 'Approvals', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', href: '/admin', exact: ['/admin'] },
+    { key: 'home', label: 'Overview', icon: 'speedometer-outline', iconActive: 'speedometer', href: '/admin', exact: ['/admin'] },
+    { key: 'counsellors', label: 'Counsellors', icon: 'people-outline', iconActive: 'people', href: '/admin/counsellors', match: ['/admin/counsellors'] },
     { key: 'reports', label: 'Reports', icon: 'bar-chart-outline', iconActive: 'bar-chart', href: '/admin/reports', match: ['/admin/reports'] },
-    { key: 'logout', label: 'Sign out', icon: 'log-out-outline', iconActive: 'log-out', action: 'logout' },
   ],
 };
 

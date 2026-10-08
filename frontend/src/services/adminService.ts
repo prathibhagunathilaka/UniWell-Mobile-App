@@ -21,6 +21,7 @@ export type WorkloadRow = {
 export type UsageReport = {
   filters: { from: string; to: string };
   generatedAt: string;
+  timeZoneOffsetMinutes?: number;
   totals: {
     bookings: number;
     completed: number;
@@ -70,3 +71,44 @@ export const exportUsageReport = (filters: ReportFilters) =>
 
 export const getAllCounsellors = () =>
   apiFetch<{ counsellors: { _id: string; name: string; status: string; specialization?: string }[] }>('/admin/counsellors');
+
+// Live platform numbers for the admin home page (counts only, no personal data).
+export type AdminOverview = {
+  generatedAt: string;
+  users: {
+    students: number;
+    newStudents7d: number;
+    counsellors: { active: number; pending: number; suspended: number };
+  };
+  today: { bookings: number };
+  next7Days: { booked: number; openSlots: number; utilisation: number | null };
+  awaitingConfirmation: number;
+  resources: number;
+};
+
+export const getAdminOverview = () => apiFetch<{ overview: AdminOverview }>('/admin/overview');
+
+export type ManagedCounsellor = {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  qualification?: string;
+  specialization?: string;
+  yearsOfExperience?: number;
+  status: 'pending' | 'active' | 'suspended';
+  createdAt: string;
+  stats: { upcomingBookings: number; pendingBookings: number; openSlots: number };
+};
+
+export const getManagedCounsellors = () => apiFetch<{ counsellors: ManagedCounsellor[] }>('/admin/counsellors/all');
+
+// Approve / decline an application, or suspend / reactivate a counsellor.
+export const setCounsellorStatus = (id: string, status: 'active' | 'suspended') =>
+  apiFetch<{ counsellor: { _id: string; name: string; status: string }; releasedBookings: number }>(`/admin/counsellors/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+
+export const removeCounsellor = (id: string) =>
+  apiFetch<{ message: string; releasedBookings: number }>(`/admin/counsellors/${id}`, { method: 'DELETE' });

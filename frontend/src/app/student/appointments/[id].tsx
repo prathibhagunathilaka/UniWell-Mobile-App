@@ -1,12 +1,13 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { AppointmentStatusTones } from '@/constants/appointmentStatus';
 import { WellbeingColors as Colors, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
-import { AppointmentRecord, cancelStudentAppointment, getStudentAppointment, getStudentAppointmentCalendar, submitSessionFeedback } from '@/services/counsellingService';
+import { AppointmentRecord, cancelStudentAppointment, getStudentAppointment, submitSessionFeedback } from '@/services/counsellingService';
+import { addStudentSessionToDeviceCalendar } from '@/utils/deviceCalendar';
 
 const statusLabels: Record<AppointmentRecord['status'], string> = {
   available: 'Available',
@@ -72,12 +73,14 @@ export default function StudentAppointmentDetailsScreen() {
 
   // NEW: add this session to the phone's own calendar.
   const addToCalendar = async () => {
-    if (!id) return;
+    if (!appointment) return;
+    setError('');
     try {
-      const file = await getStudentAppointmentCalendar(id);
-      await Share.share({ title: file.filename, message: file.ics });
+      // Opens the phone's calendar with the session filled in; the student picks the account and saves.
+      const result = await addStudentSessionToDeviceCalendar(appointment);
+      if (result !== 'cancelled') setNotice('Sent to your calendar app.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to export this session.');
+      setError(cause instanceof Error ? cause.message : 'Unable to open your calendar.');
     }
   };
 

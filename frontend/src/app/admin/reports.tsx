@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Dropdown } from '@/components/wellbeing/Dropdown';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, PrimaryButton, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
-    exportUsageReport,
-    getAllCounsellors,
-    getUsageReport,
-    ReportFilters,
-    UsageReport,
+  exportUsageReport,
+  getAllCounsellors,
+  getUsageReport,
+  ReportFilters,
+  UsageReport,
 } from '@/services/adminService';
+import { saveAndShareTextFile } from '@/utils/shareFile';
 
 const DAY = 24 * 60 * 60 * 1000;
 const ranges = [
@@ -104,8 +106,10 @@ export default function AdminReportsScreen() {
     setMessage('');
     try {
       const file = await exportUsageReport(buildFilters());
-      await Share.share({ title: file.filename, message: file.csv });
-      setMessage(`Report exported as ${file.filename}. It contains aggregate numbers only.`);
+      const result = await saveAndShareTextFile(file.filename, file.csv);
+      setMessage(result === 'downloaded'
+        ? `Downloaded ${file.filename}. It contains aggregate numbers only.`
+        : `${file.filename} is ready. Choose Save to Files / Drive, or an app such as Excel. It contains aggregate numbers only.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to export the report.');
     } finally {
@@ -137,16 +141,12 @@ export default function AdminReportsScreen() {
           </Pressable>
         ))}
       </View>
-      <View style={styles.chips}>
-        <Pressable accessibilityRole="radio" accessibilityState={{ checked: !counsellorId }} onPress={() => setCounsellorId('')} style={[styles.chip, !counsellorId && styles.chipOn]}>
-          <Text style={[styles.chipText, !counsellorId && styles.chipTextOn]}>All counsellors</Text>
-        </Pressable>
-        {counsellors.map((c) => (
-          <Pressable key={c._id} accessibilityRole="radio" accessibilityState={{ checked: counsellorId === c._id }} onPress={() => setCounsellorId(c._id)} style={[styles.chip, counsellorId === c._id && styles.chipOn]}>
-            <Text style={[styles.chipText, counsellorId === c._id && styles.chipTextOn]}>{c.name}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Dropdown
+        label="Counsellor"
+        value={counsellorId}
+        onChange={setCounsellorId}
+        options={[{ value: '', label: 'All counsellors' }, ...counsellors.map((c) => ({ value: c._id, label: c.name }))]}
+      />
 
       {loading ? <LoadingState label="Building report..." /> : null}
       <InlineMessage tone="error">{error}</InlineMessage>

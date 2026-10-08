@@ -39,7 +39,8 @@
         {
           "calendarPermission": "UniWell adds your counselling sessions to your calendar."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
