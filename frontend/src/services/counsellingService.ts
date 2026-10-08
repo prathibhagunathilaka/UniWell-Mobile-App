@@ -62,6 +62,8 @@ export const getCounsellor = (id: string) =>
 export const getCounsellorAvailability = (id: string) =>
   apiFetch<{ slots: CounsellorSlot[] }>(`/counsellors/${id}/availability`);
 
+export const SLOT_DURATIONS = [15, 30, 45, 60, 90] as const;
+
 export const createAvailability = (startsAt: string, durationMinutes: number) =>
   apiFetch<{ slot: CounsellorSlot }>('/appointments/availability', {
     method: 'POST',
@@ -98,10 +100,10 @@ export type BulkAvailabilityResult = {
   skipped: { startsAt: string; reason: string }[];
 };
 
-export const createAvailabilityBulk = (slots: string[]) =>
+export const createAvailabilityBulk = (slots: string[], durationMinutes = 30) =>
   apiFetch<BulkAvailabilityResult>('/appointments/availability/bulk', {
     method: 'POST',
-    body: JSON.stringify({ slots }),
+    body: JSON.stringify({ slots, durationMinutes }),
   });
 
 export type SharedCheckIn = {

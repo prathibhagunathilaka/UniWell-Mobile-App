@@ -41,10 +41,11 @@ export function AppTopBar() {
   }
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() || 'U';
-  // Only students have a profile screen today; for other roles this stays a dummy link.
+  // Students and counsellors each have their own profile screen; admins have none yet.
   const openProfile = () => {
     setMenuOpen(false);
     if (role === 'student') router.push('/student/profile');
+    if (role === 'counsellor') router.push('/counsellor/profile');
   };
 
   return (

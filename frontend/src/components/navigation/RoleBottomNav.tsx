@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUnreadCount } from '@/services/notificationService';
 
 type Role = 'student' | 'counsellor' | 'admin';
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -21,7 +20,6 @@ type Tab = {
   match?: string[];
   exact?: string[];
   action?: 'logout';
-  badge?: 'unread';
 };
 
 // NEW: one constant bottom bar for every signed-in screen, with tabs chosen by role.
@@ -34,11 +32,11 @@ const TABS: Record<Role, Tab[]> = {
     { key: 'help', label: 'Help now', icon: 'alert-circle-outline', iconActive: 'alert-circle', href: '/student/emergency', match: ['/student/emergency'] },
   ],
   counsellor: [
-    { key: 'home', label: 'Home', icon: 'home-outline', iconActive: 'home', href: '/counsellor', exact: ['/counsellor'], match: ['/counsellor/appointments'] },
+    { key: 'home', label: 'Home', icon: 'home-outline', iconActive: 'home', href: '/counsellor', exact: ['/counsellor'], match: ['/counsellor/appointments', '/counsellor/profile', '/counsellor/notifications'] },
     { key: 'calendar', label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', href: '/counsellor/calendar', match: ['/counsellor/calendar'] },
     { key: 'availability', label: 'Availability', icon: 'time-outline', iconActive: 'time', href: '/counsellor/availability', match: ['/counsellor/availability'] },
     { key: 'sync', label: 'Sync', icon: 'sync-outline', iconActive: 'sync', href: '/counsellor/sync', match: ['/counsellor/sync'] },
-    { key: 'alerts', label: 'Alerts', icon: 'notifications-outline', iconActive: 'notifications', href: '/counsellor/notifications', match: ['/counsellor/notifications'], badge: 'unread' },
+    { key: 'resources', label: 'Resources', icon: 'library-outline', iconActive: 'library', href: '/counsellor/resources', match: ['/counsellor/resources'] },
   ],
   admin: [
     { key: 'approvals', label: 'Approvals', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', href: '/admin', exact: ['/admin'] },
@@ -65,7 +63,6 @@ export function RoleBottomNav() {
   const insets = useSafeAreaInsets();
   const { user, token, logout } = useAuth();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
 
   const pathRole = roleOfPath(pathname);
   const role = user && token && pathRole === user.role ? (user.role as Role) : null;
@@ -82,21 +79,6 @@ export function RoleBottomNav() {
     };
   }, []);
 
-  // Unread badge for the Alerts tab (counsellors); refreshed on navigation and every minute.
-  useEffect(() => {
-    if (role !== 'counsellor') return;
-    let active = true;
-    const refresh = () => {
-      getUnreadCount().then((r) => active && setUnread(r.unreadCount)).catch(() => undefined);
-    };
-    refresh();
-    const timer = setInterval(refresh, 60000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [role, pathname]);
-
   if (!role || keyboardOpen) return null;
 
   return (
@@ -104,13 +86,12 @@ export function RoleBottomNav() {
       {TABS[role].map((tab) => {
         const active = isActive(tab, pathname);
         const urgent = tab.key === 'help';
-        const badge = tab.badge === 'unread' ? unread : 0;
         return (
           <Pressable
             key={tab.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            accessibilityLabel={badge ? `${tab.label}, ${badge} unread` : tab.label}
+            accessibilityLabel={tab.label}
             onPress={() => {
               if (tab.action === 'logout') {
                 void logout();
@@ -127,9 +108,6 @@ export function RoleBottomNav() {
                 size={24}
                 color={active ? Colors.accent : urgent ? Colors.error : Colors.muted}
               />
-              {badge > 0 ? (
-                <View style={styles.badge}><Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text></View>
-              ) : null}
             </View>
             <Text numberOfLines={1} style={[styles.label, active && styles.labelOn, urgent && !active && styles.labelUrgent]}>
               {tab.label}
@@ -156,6 +134,4 @@ const styles = StyleSheet.create({
   label: { color: Colors.muted, fontSize: 11, fontWeight: '700' },
   labelOn: { color: Colors.accent, fontWeight: '900' },
   labelUrgent: { color: Colors.error },
-  badge: { position: 'absolute', top: -4, right: -10, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary },
-  badgeText: { color: Colors.accent, fontSize: 9, fontWeight: '900' },
 });

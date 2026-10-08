@@ -123,7 +123,7 @@ const updateCounsellorProfile = async (req, res) => {
         }
       },
       { new: true, runValidators: true }
-    ).select(publicCounsellorFields);
+    ).select(`${publicCounsellorFields} email status phoneNumber`);
 
     return res.status(200).json({ counsellor });
   } catch (error) {

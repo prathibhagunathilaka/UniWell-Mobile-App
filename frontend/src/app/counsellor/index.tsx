@@ -1,303 +1,291 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Href, router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AuthButton, AuthField } from '@/components/auth/AuthUI';
-import { QuickLinks } from '@/components/wellbeing/QuickLinks';
-import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
+import { InlineMessage, LoadingState, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
+import { AppointmentStatusTones } from '@/constants/appointmentStatus';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
-import {
-  AppointmentRecord,
-  CounsellorProfile,
-  CounsellorResource,
-  CounsellorResourceInput,
-  createAvailability,
-  createCounsellorResource,
-  deleteAvailability,
-  deleteCounsellorResource,
-  getCounsellorAppointments,
-  getCounsellorProfile,
-  getCounsellorResources,
-  updateAppointmentStatus,
-  updateCounsellorProfile,
-  updateCounsellorResource,
-} from '@/services/counsellingService';
+import { useAuth } from '@/contexts/AuthContext';
+import { AppointmentRecord, getCounsellorAppointments, updateAppointmentStatus } from '@/services/counsellingService';
 
-const categories = [
-  'Stress Management',
-  'Anxiety & Worry',
-  'Sleep',
-  'Academic Pressure',
-  'Time Management',
-  'Emotional Wellbeing',
-  'Sleep & Rest',
-  'Relaxation / Mindfulness',
-  'Self-Care',
-  'Study-Life Balance',
-] as const;
+type IconName = keyof typeof Ionicons.glyphMap;
 
-const emptyResource: CounsellorResourceInput = {
-  title: '',
-  description: '',
-  category: categories[0],
-  content: '',
+const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
+
+const greetingFor = (date: Date) => {
+  const hour = date.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 };
 
-export default function CounsellorDashboardScreen() {
+const timeOf = (iso: string) =>
+  new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+const endsAt = (a: AppointmentRecord) => new Date(a.startsAt).getTime() + a.durationMinutes * MINUTE;
+
+const untilLabel = (startsAtMs: number, nowMs: number) => {
+  const diff = startsAtMs - nowMs;
+  if (diff <= 0) return 'happening now';
+  const mins = Math.round(diff / MINUTE);
+  if (mins < 60) return `in ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `in ${hours} h ${mins % 60 ? `${mins % 60} min` : ''}`.trim();
+  return new Date(startsAtMs).toLocaleDateString(undefined, { weekday: 'long' });
+};
+
+const confirmCancel = (onYes: () => void) => {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.confirm('Cancel this appointment? The student will be notified.')) onYes();
+    return;
+  }
+  Alert.alert('Cancel this appointment?', 'The student will be notified.', [
+    { text: 'Keep', style: 'cancel' },
+    { text: 'Cancel appointment', style: 'destructive', onPress: onYes },
+  ]);
+};
+
+const openAppointment = (id: string) => router.push({ pathname: '/counsellor/appointments/[id]', params: { id } });
+
+// Counsellor home: what matters today, at a glance. Profile, availability and resources live on their own pages.
+export default function CounsellorHomeScreen() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<CounsellorProfile | null>(null);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
-  const [resources, setResources] = useState<CounsellorResource[]>([]);
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [resource, setResource] = useState<CounsellorResourceInput>(emptyResource);
-  const [editingResourceId, setEditingResourceId] = useState('');
+  const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
     try {
-      const [profileResponse, appointmentsResponse, resourcesResponse] = await Promise.all([
-        getCounsellorProfile(),
-        getCounsellorAppointments(),
-        getCounsellorResources(),
-      ]);
-      setProfile(profileResponse.counsellor);
-      setAppointments(appointmentsResponse.appointments);
-      setResources(resourcesResponse.resources);
+      const response = await getCounsellorAppointments();
+      setAppointments(response.appointments);
+      setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load your counsellor workspace.');
+      setError(cause instanceof Error ? cause.message : 'Unable to load your appointments.');
     } finally {
+      setNow(new Date());
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void Promise.resolve().then(load);
+    const timer = setInterval(() => void load(), MINUTE); // new bookings + "in X min" stay fresh
+    return () => clearInterval(timer);
   }, [load]);
 
-  const saveProfile = async () => {
-    if (!profile) return;
-    setSaving(true);
+  const change = async (appointment: AppointmentRecord, status: 'confirmed' | 'cancelled' | 'completed') => {
+    setBusyId(appointment._id);
     setError('');
-    try {
-      const response = await updateCounsellorProfile({
-        name: profile.name,
-        phoneNumber: profile.phoneNumber || '',
-        qualification: profile.qualification,
-        specialization: profile.specialization,
-        yearsOfExperience: profile.yearsOfExperience,
-      });
-      setProfile(response.counsellor);
-      setMessage('Profile updated.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update your profile.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const saveAvailability = async () => {
-    const start = new Date(`${date}T${time}`);
-    if (!date || !time || !Number.isFinite(start.getTime())) {
-      setError('Choose a valid future date and start time.');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    try {
-      await createAvailability(start.toISOString(), 30);
-      setMessage('Availability added.');
-      setDate('');
-      setTime('');
-      await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save availability.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const changeAppointment = async (appointment: AppointmentRecord, status: 'confirmed' | 'cancelled' | 'completed') => {
-    setError('');
+    setMessage('');
     try {
       await updateAppointmentStatus(appointment._id, status);
+      setMessage(`Appointment ${status}. The student has been notified.`);
       await load();
-      setMessage(`Appointment ${status}.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update this appointment.');
-    }
-  };
-
-  const submitResource = async () => {
-    setSaving(true);
-    setError('');
-    try {
-      if (editingResourceId) {
-        await updateCounsellorResource(editingResourceId, resource);
-        setMessage('Resource updated.');
-      } else {
-        await createCounsellorResource(resource);
-        setMessage('Resource published for students.');
-      }
-      setResource(emptyResource);
-      setEditingResourceId('');
-      await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save this resource.');
     } finally {
-      setSaving(false);
+      setBusyId('');
     }
   };
 
-  const editResource = (item: CounsellorResource) => {
-    setEditingResourceId(item._id);
-    setResource({
-      title: item.title,
-      description: item.description,
-      category: item.category,
-      content: item.content,
-      externalLink: item.externalLink,
-      videoUrl: item.videoUrl,
-      imageUrl: item.imageUrl,
-      helpfulTips: item.helpfulTips,
-    });
-  };
+  const summary = useMemo(() => {
+    const nowMs = now.getTime();
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = dayStart.getTime() + DAY;
+    const byTime = (a: AppointmentRecord, b: AppointmentRecord) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
 
-  const removeResource = async (id: string) => {
-    setError('');
-    try {
-      await deleteCounsellorResource(id);
-      await load();
-      setMessage('Resource removed from student resources.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to remove this resource.');
-    }
-  };
+    const booked = appointments.filter((a) => a.studentId);
+    const today = booked
+      .filter((a) => ['pending', 'confirmed', 'completed'].includes(a.status))
+      .filter((a) => {
+        const t = new Date(a.startsAt).getTime();
+        return t >= dayStart.getTime() && t < dayEnd;
+      })
+      .sort(byTime);
+    const upcoming = booked.filter((a) => ['pending', 'confirmed'].includes(a.status) && endsAt(a) > nowMs).sort(byTime);
+    const todayIds = new Set(today.map((a) => a._id));
 
-  const updateProfileField = <K extends keyof CounsellorProfile>(key: K, value: CounsellorProfile[K]) => {
-    setProfile((current) => current ? { ...current, [key]: value } : current);
-  };
-  const updateResourceField = (key: keyof CounsellorResourceInput, value: string) => {
-    setResource((current) => ({ ...current, [key]: value }));
-  };
+    return {
+      today,
+      stillToGo: today.filter((a) => a.status !== 'completed' && a.status !== 'cancelled' && endsAt(a) > nowMs).length,
+      doneToday: today.filter((a) => a.status === 'completed').length,
+      next: upcoming[0],
+      pendingAll: upcoming.filter((a) => a.status === 'pending').length,
+      pendingLater: upcoming.filter((a) => a.status === 'pending' && !todayIds.has(a._id)).length,
+      openSlots: appointments.filter((a) => a.status === 'available' && new Date(a.startsAt).getTime() > nowMs).length,
+    };
+  }, [appointments, now]);
+
+  const { today, next } = summary;
+  const nowMs = now.getTime();
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const nextStart = next ? new Date(next.startsAt).getTime() : 0;
+  const nextIsToday = next ? new Date(next.startsAt).toDateString() === now.toDateString() : false;
+
+  const links: { label: string; detail: string; icon: IconName; href: Href }[] = [
+    { label: 'Calendar', detail: 'Week view of bookings', icon: 'calendar-outline', href: '/counsellor/calendar' },
+    { label: 'Availability', detail: 'Add or repeat slots', icon: 'time-outline', href: '/counsellor/availability' },
+    { label: 'Student resources', detail: 'Publish self-help content', icon: 'library-outline', href: '/counsellor/resources' },
+    { label: 'Booking sync', detail: 'Google / Apple / Outlook', icon: 'sync-outline', href: '/counsellor/sync' },
+  ];
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
-      <View style={styles.topBar}>
-        <Text style={styles.welcome}>Hello, {user?.name || profile?.name || 'Counsellor'}</Text>
+      <View style={styles.header}>
+        <Text style={styles.date}>{dateLabel}</Text>
+        <Text style={styles.greeting}>{greetingFor(now)}, {user?.name || 'Counsellor'}</Text>
       </View>
-      <QuickLinks links={[
-        { label: 'Calendar', detail: 'Week view of all bookings', href: '/counsellor/calendar' },
-        { label: 'Availability', detail: 'Publish and repeat slots', href: '/counsellor/availability' },
-        { label: 'Booking sync', detail: 'Google / Apple / Outlook link', href: '/counsellor/sync' },
-        { label: 'Notifications', detail: 'New bookings and reminders', href: '/counsellor/notifications' },
-      ]} />
-      {!loading ? (() => {
-        const start = new Date(); start.setHours(0, 0, 0, 0);
-        const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-        const today = appointments.filter((a) => a.studentId && ['pending', 'confirmed'].includes(a.status) && new Date(a.startsAt) >= start && new Date(a.startsAt) < end);
-        const waiting = appointments.filter((a) => a.status === 'pending' && new Date(a.startsAt) > new Date()).length;
-        const next = appointments.filter((a) => a.studentId && ['pending', 'confirmed'].includes(a.status) && new Date(a.startsAt) > new Date()).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0];
-        return (
-          <SurfaceCard style={styles.today}>
-            <Text style={styles.todayTitle}>Today</Text>
-            <Text style={styles.todayLine}>{today.length} session{today.length === 1 ? '' : 's'} scheduled{waiting ? ` · ${waiting} waiting for your confirmation` : ''}</Text>
-            <Text style={styles.todaySub}>{next ? `Next: ${new Date(next.startsAt).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })} with ${next.studentId?.name || 'a student'}` : 'No upcoming sessions yet.'}</Text>
-          </SurfaceCard>
-        );
-      })() : null}
-      <PageHeading title="Counsellor workspace" subtitle="Manage your profile, availability, appointments, and student resources." />
-      {loading ? <LoadingState label="Loading your workspace..." /> : null}
+
       <InlineMessage tone="error">{error}</InlineMessage>
       <InlineMessage tone="success">{message}</InlineMessage>
-      {!loading && profile ? (
+      {loading ? <LoadingState label="Loading your day..." /> : null}
+
+      {!loading ? (
         <>
-          <SectionHeading title="Professional profile" detail="Students see this information in the counsellor directory." />
-          <SurfaceCard style={styles.form}>
-            <AuthField label="Name" value={profile.name} onChangeText={(value) => updateProfileField('name', value)} />
-            <AuthField label="Phone number" value={profile.phoneNumber || ''} onChangeText={(value) => updateProfileField('phoneNumber', value)} keyboardType="phone-pad" />
-            <AuthField label="Qualification" value={profile.qualification} onChangeText={(value) => updateProfileField('qualification', value)} />
-            <AuthField label="Specialization" value={profile.specialization} onChangeText={(value) => updateProfileField('specialization', value)} />
-            <AuthField label="Years of experience" value={String(profile.yearsOfExperience)} onChangeText={(value) => updateProfileField('yearsOfExperience', Number(value) || 0)} keyboardType="number-pad" />
-            <AuthButton title="Save profile" onPress={() => void saveProfile()} loading={saving} />
-          </SurfaceCard>
-
-          <SectionHeading title="Availability" detail="Publish specific future appointment times for students to book." />
-          <SurfaceCard style={styles.form}>
-            <AuthField label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} placeholder="2026-10-20" />
-            <AuthField label="Start time (24-hour, HH:MM)" value={time} onChangeText={setTime} placeholder="10:30" />
-            <Text style={styles.muted}>Sessions are scheduled in 30-minute slots.</Text>
-            <AuthButton title="Add availability" onPress={() => void saveAvailability()} loading={saving} />
-          </SurfaceCard>
-
-          <SectionHeading title="Appointments" detail="Bookings and available times come from the shared appointment records." />
-          {appointments.length === 0 ? <SurfaceCard><Text style={styles.muted}>No bookings or availability yet.</Text></SurfaceCard> : null}
-          {appointments.map((appointment) => (
-            <SurfaceCard key={appointment._id} style={styles.appointment}>
-              <View style={styles.appointmentHeader}>
-                <Text style={styles.appointmentTitle}>{appointment.studentId?.name || (appointment.status === 'available' ? 'Available slot' : 'Student appointment')}</Text>
-                <Text style={styles.badge}>{appointment.status}</Text>
+          <View style={styles.hero}>
+            <Text style={styles.heroEyebrow}>Today</Text>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroNumber}>{today.length}</Text>
+              <View style={styles.heroCopy}>
+                <Text style={styles.heroTitle}>{today.length === 1 ? 'session' : 'sessions'} scheduled</Text>
+                <Text style={styles.heroSub}>
+                  {today.length === 0 ? 'A clear day so far' : `${summary.stillToGo} still to go · ${summary.doneToday} completed`}
+                </Text>
               </View>
-              <Text style={styles.appointmentText}>{new Date(appointment.startsAt).toLocaleString()} · {appointment.durationMinutes} min</Text>
-              {appointment.studentId ? (
-                <>
-                  <Text style={styles.appointmentText}>{appointment.sessionType} session</Text>
-                  <Text style={styles.appointmentText}>{appointment.studentId.email}{appointment.studentId.phoneNumber ? ` · ${appointment.studentId.phoneNumber}` : ''}</Text>
-                  {appointment.studentId.faculty ? <Text style={styles.appointmentText}>{appointment.studentId.faculty}{appointment.studentId.year ? ` · Year ${appointment.studentId.year}` : ''}</Text> : null}
-                </>
-              ) : null}
-              {appointment.status === 'available' ? (
-                <Pressable accessibilityRole="button" onPress={() => void deleteAvailability(appointment._id).then(load).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Unable to remove availability.'))}>
-                  <Text style={styles.action}>Remove availability</Text>
-                </Pressable>
-              ) : null}
-              {appointment.status === 'pending' ? (
-                <View style={styles.actions}>
-                  <Pressable accessibilityRole="button" onPress={() => void changeAppointment(appointment, 'confirmed')} style={styles.actionButton}><Text style={styles.actionText}>Confirm</Text></Pressable>
-                  <Pressable accessibilityRole="button" onPress={() => void changeAppointment(appointment, 'cancelled')} style={styles.cancelButton}><Text style={styles.actionText}>Cancel</Text></Pressable>
-                </View>
-              ) : null}
-              {appointment.status === 'confirmed' ? (
-                <View style={styles.actions}>
-                  <Pressable accessibilityRole="button" onPress={() => void changeAppointment(appointment, 'completed')} style={styles.actionButton}><Text style={styles.actionText}>Mark completed</Text></Pressable>
-                  <Pressable accessibilityRole="button" onPress={() => void changeAppointment(appointment, 'cancelled')} style={styles.cancelButton}><Text style={styles.actionText}>Cancel</Text></Pressable>
-                </View>
-              ) : null}
-            </SurfaceCard>
-          ))}
-
-          <SectionHeading title="Student self-help resources" detail="Publish or edit resources that appear in the student resource library." />
-          <SurfaceCard style={styles.form}>
-            <AuthField label="Title" value={resource.title} onChangeText={(value) => updateResourceField('title', value)} />
-            <AuthField label="Short description" value={resource.description} onChangeText={(value) => updateResourceField('description', value)} />
-            <Text style={styles.fieldLabel}>Category</Text>
-            <View style={styles.categoryRow}>
-              {categories.map((category) => (
-              <Pressable key={category} onPress={() => updateResourceField('category', category)} style={[styles.category, resource.category === category && styles.categorySelected]}>
-                <Text style={[styles.categoryText, resource.category === category && styles.categoryTextSelected]}>{category}</Text>
-                </Pressable>
-              ))}
             </View>
-            <AuthField label="Resource content" value={resource.content} onChangeText={(value) => updateResourceField('content', value)} multiline />
-            <AuthField label="Optional resource URL" value={resource.externalLink || ''} onChangeText={(value) => updateResourceField('externalLink', value)} autoCapitalize="none" keyboardType="url" />
-            <AuthButton title={editingResourceId ? 'Update resource' : 'Publish resource'} onPress={() => void submitResource()} loading={saving} />
-            {editingResourceId ? <Pressable onPress={() => { setResource(emptyResource); setEditingResourceId(''); }}><Text style={styles.action}>Cancel editing</Text></Pressable> : null}
-          </SurfaceCard>
-          {resources.map((item) => (
-            <SurfaceCard key={item._id} style={styles.resourceCard}>
-              <Text style={styles.resourceTitle}>{item.title}</Text>
-              <Text style={styles.muted}>{item.category} · {item.description}</Text>
-              <View style={styles.actions}>
-                <Pressable accessibilityRole="button" onPress={() => editResource(item)}><Text style={styles.action}>Edit</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => void removeResource(item._id)}><Text style={styles.remove}>Remove</Text></Pressable>
-              </View>
+            <View style={styles.heroNext}>
+              <Ionicons name="time-outline" size={18} color={Colors.accent} />
+              {next ? (
+                <Pressable accessibilityRole="button" onPress={() => openAppointment(next._id)} style={styles.heroNextCopy}>
+                  <Text style={styles.heroNextLabel}>
+                    Next: {nextIsToday ? timeOf(next.startsAt) : new Date(next.startsAt).toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + timeOf(next.startsAt)} with {next.studentId?.name || 'a student'}
+                  </Text>
+                  <Text style={styles.heroNextSub}>{untilLabel(nextStart, nowMs)} · tap to view</Text>
+                </Pressable>
+              ) : (
+                <Text style={[styles.heroNextLabel, { flex: 1 }]}>No upcoming sessions booked</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.tiles}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${summary.pendingAll} bookings need confirmation`}
+              onPress={() => router.push('/counsellor/calendar')}
+              style={[styles.tile, summary.pendingAll > 0 && styles.tileAlert]}
+            >
+              <Text style={[styles.tileNumber, summary.pendingAll > 0 && styles.tileNumberAlert]}>{summary.pendingAll}</Text>
+              <Text style={styles.tileLabel}>Need your reply</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${summary.openSlots} open slots`}
+              onPress={() => router.push('/counsellor/availability')}
+              style={styles.tile}
+            >
+              <Text style={styles.tileNumber}>{summary.openSlots}</Text>
+              <Text style={styles.tileLabel}>Open slots</Text>
+            </Pressable>
+            <View style={styles.tile}>
+              <Text style={styles.tileNumber}>{summary.doneToday}</Text>
+              <Text style={styles.tileLabel}>Done today</Text>
+            </View>
+          </View>
+
+          {summary.pendingLater > 0 ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/counsellor/calendar')} style={styles.notice}>
+              <Ionicons name="alert-circle" size={20} color={Colors.primary} />
+              <Text style={styles.noticeText}>
+                {summary.pendingLater} booking request{summary.pendingLater === 1 ? '' : 's'} on later days {summary.pendingLater === 1 ? 'needs' : 'need'} confirmation
+              </Text>
+              <Text style={styles.noticeAction}>Open calendar</Text>
+            </Pressable>
+          ) : null}
+
+          <SectionHeading title="Today's appointments" detail={today.length ? 'Tap a session for student details and the shared check-in.' : undefined} />
+          {today.length === 0 ? (
+            <SurfaceCard style={styles.empty}>
+              <Ionicons name="cafe-outline" size={28} color={Colors.muted} />
+              <Text style={styles.emptyTitle}>No appointments today</Text>
+              <Text style={styles.emptyText}>New bookings for today will appear here automatically.</Text>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/counsellor/availability')}>
+                <Text style={styles.link}>Add availability</Text>
+              </Pressable>
             </SurfaceCard>
-          ))}
+          ) : null}
+          {today.map((appointment) => {
+            const tone = AppointmentStatusTones[appointment.status];
+            const student = appointment.studentId;
+            const busy = busyId === appointment._id;
+            const detail = [
+              appointment.sessionType.charAt(0).toUpperCase() + appointment.sessionType.slice(1),
+              student?.faculty,
+              student?.year ? `Year ${student.year}` : undefined,
+            ].filter(Boolean).join(' · ');
+            return (
+              <View key={appointment._id} style={[styles.card, { borderLeftColor: tone.accent, backgroundColor: tone.cardBg }]}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Open appointment with ${student?.name || 'student'}`} onPress={() => openAppointment(appointment._id)} style={styles.cardMain}>
+                  <View style={styles.timeCol}>
+                    <Text style={styles.time}>{timeOf(appointment.startsAt)}</Text>
+                    <Text style={styles.duration}>{appointment.durationMinutes} min</Text>
+                  </View>
+                  <View style={styles.cardInfo}>
+                    <Text numberOfLines={1} style={styles.studentName}>{student?.name || 'Student'}</Text>
+                    <Text numberOfLines={1} style={styles.cardMeta}>{detail}</Text>
+                    <View style={styles.chips}>
+                      <Text style={[styles.pill, { color: tone.text, backgroundColor: tone.pill }]}>{tone.label}</Text>
+                      {appointment.shareCheckIn ? <Text style={styles.sharedChip}>Check-in shared</Text> : null}
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+                </Pressable>
+                {appointment.status === 'pending' ? (
+                  <View style={styles.actions}>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => void change(appointment, 'confirmed')} style={[styles.primaryAction, busy && styles.disabled]}>
+                      <Text style={styles.primaryActionText}>Confirm</Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => confirmCancel(() => void change(appointment, 'cancelled'))} style={[styles.secondaryAction, busy && styles.disabled]}>
+                      <Text style={styles.secondaryActionText}>Decline</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+                {appointment.status === 'confirmed' ? (
+                  <View style={styles.actions}>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => void change(appointment, 'completed')} style={[styles.primaryAction, busy && styles.disabled]}>
+                      <Text style={styles.primaryActionText}>Mark completed</Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => confirmCancel(() => void change(appointment, 'cancelled'))} style={[styles.secondaryAction, busy && styles.disabled]}>
+                      <Text style={styles.secondaryActionText}>Cancel</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+
+          <SectionHeading title="Quick actions" />
+          <View style={styles.links}>
+            {links.map((link) => (
+              <Pressable
+                key={link.label}
+                accessibilityRole="button"
+                accessibilityLabel={`${link.label}. ${link.detail}`}
+                onPress={() => router.push(link.href)}
+                style={({ pressed }) => [styles.link_card, pressed && styles.pressed]}
+              >
+                <View style={styles.linkIcon}><Ionicons name={link.icon} size={22} color={Colors.accent} /></View>
+                <Text style={styles.linkLabel}>{link.label}</Text>
+                <Text style={styles.linkDetail}>{link.detail}</Text>
+              </Pressable>
+            ))}
+          </View>
         </>
       ) : null}
     </WellbeingPage>
@@ -305,32 +293,61 @@ export default function CounsellorDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  today: { gap: 2, backgroundColor: Colors.paleBlue },
-  todayTitle: { color: Colors.muted, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
-  todayLine: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
-  todaySub: { color: Colors.muted, fontSize: 13 },
   page: { gap: Space.md },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
-  welcome: { color: Colors.accent, fontSize: 20, fontWeight: '800' },
-  form: { gap: Space.sm },
-  categoryRow: { flexDirection: 'row', gap: Space.xs, flexWrap: 'wrap' },
-  category: { paddingHorizontal: Space.sm, paddingVertical: Space.xs, borderRadius: Radius.pill, backgroundColor: Colors.paleBlue },
-  categorySelected: { backgroundColor: Colors.primary },
-  categoryText: { color: Colors.accent, fontSize: 12, fontWeight: '700' },
-  categoryTextSelected: { color: Colors.white },
-  fieldLabel: { color: Colors.accent, fontSize: 13, fontWeight: '800' },
-  muted: { color: Colors.muted, fontSize: 14, lineHeight: 20 },
-  appointment: { gap: Space.xs },
-  appointmentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.xs },
-  appointmentTitle: { flex: 1, color: Colors.accent, fontSize: 15, fontWeight: '800' },
-  badge: { color: Colors.accent, backgroundColor: Colors.paleBlue, paddingHorizontal: Space.sm, paddingVertical: 4, borderRadius: Radius.pill, fontSize: 11, fontWeight: '800', textTransform: 'capitalize' },
-  appointmentText: { color: Colors.muted, fontSize: 13, lineHeight: 19 },
-  actions: { flexDirection: 'row', gap: Space.md, marginTop: Space.xs, flexWrap: 'wrap' },
-  actionButton: { paddingHorizontal: Space.md, paddingVertical: Space.sm, borderRadius: Radius.md, backgroundColor: Colors.primary },
-  cancelButton: { paddingHorizontal: Space.md, paddingVertical: Space.sm, borderRadius: Radius.md, backgroundColor: Colors.paleCoral },
-  actionText: { color: Colors.accent, fontSize: 13, fontWeight: '800' },
-  action: { color: Colors.primary, fontSize: 14, fontWeight: '800', paddingVertical: Space.xs },
-  resourceCard: { gap: Space.xs },
-  resourceTitle: { color: Colors.accent, fontSize: 15, fontWeight: '800' },
-  remove: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
+  header: { gap: 2 },
+  date: { color: Colors.muted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
+  greeting: { color: Colors.accent, fontSize: 24, lineHeight: 30, fontWeight: '800' },
+
+  hero: { gap: Space.sm, padding: Space.md, borderRadius: Radius.lg, backgroundColor: Colors.accent },
+  heroEyebrow: { color: Colors.secondary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+  heroNumber: { color: Colors.white, fontSize: 56, lineHeight: 62, fontWeight: '900' },
+  heroCopy: { flex: 1, gap: 2 },
+  heroTitle: { color: Colors.white, fontSize: 18, fontWeight: '800' },
+  heroSub: { color: Colors.secondary, fontSize: 13 },
+  heroNext: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, borderRadius: Radius.md, backgroundColor: Colors.secondary },
+  heroNextCopy: { flex: 1, gap: 1 },
+  heroNextLabel: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  heroNextSub: { color: Colors.accent, fontSize: 12 },
+
+  tiles: { flexDirection: 'row', gap: Space.sm },
+  tile: { flex: 1, minHeight: 78, justifyContent: 'center', gap: 2, padding: Space.sm, borderRadius: Radius.md, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  tileAlert: { backgroundColor: Colors.paleCoral, borderColor: Colors.primary },
+  tileNumber: { color: Colors.accent, fontSize: 26, fontWeight: '900' },
+  tileNumberAlert: { color: Colors.primary },
+  tileLabel: { color: Colors.muted, fontSize: 12, fontWeight: '700' },
+
+  notice: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Space.sm, padding: Space.md, borderRadius: Radius.md, backgroundColor: Colors.paleCoral, borderWidth: 1, borderColor: Colors.primary },
+  noticeText: { flex: 1, minWidth: 180, color: Colors.accent, fontSize: 13, fontWeight: '700', lineHeight: 19 },
+  noticeAction: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
+
+  empty: { alignItems: 'center', paddingVertical: Space.lg },
+  emptyTitle: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  emptyText: { color: Colors.muted, fontSize: 13, textAlign: 'center' },
+  link: { color: Colors.primary, fontSize: 14, fontWeight: '800', paddingVertical: Space.xs },
+
+  card: { borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 5, overflow: 'hidden' },
+  cardMain: { flexDirection: 'row', alignItems: 'center', gap: Space.md, padding: Space.md },
+  timeCol: { width: 68, gap: 2 },
+  time: { color: Colors.accent, fontSize: 16, fontWeight: '900' },
+  duration: { color: Colors.muted, fontSize: 12 },
+  cardInfo: { flex: 1, gap: 3 },
+  studentName: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  cardMeta: { color: Colors.muted, fontSize: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.xs, marginTop: 2 },
+  pill: { paddingHorizontal: Space.sm, paddingVertical: 3, borderRadius: Radius.pill, overflow: 'hidden', fontSize: 11, fontWeight: '800' },
+  sharedChip: { paddingHorizontal: Space.sm, paddingVertical: 3, borderRadius: Radius.pill, overflow: 'hidden', fontSize: 11, fontWeight: '800', color: Colors.accent, backgroundColor: Colors.paleBlue },
+  actions: { flexDirection: 'row', gap: Space.sm, paddingHorizontal: Space.md, paddingBottom: Space.md },
+  primaryAction: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, backgroundColor: Colors.primary },
+  primaryActionText: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  secondaryAction: { minHeight: 44, paddingHorizontal: Space.md, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  secondaryActionText: { color: Colors.error, fontSize: 14, fontWeight: '800' },
+  disabled: { opacity: 0.55 },
+
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
+  link_card: { flexGrow: 1, flexBasis: '45%', gap: 4, padding: Space.md, borderRadius: Radius.md, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  pressed: { opacity: 0.85 },
+  linkIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.paleBlue, marginBottom: 2 },
+  linkLabel: { color: Colors.accent, fontSize: 15, fontWeight: '800' },
+  linkDetail: { color: Colors.muted, fontSize: 12 },
 });

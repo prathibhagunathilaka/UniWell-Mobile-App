@@ -33,7 +33,13 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "UniWell adds your counselling sessions to your calendar."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

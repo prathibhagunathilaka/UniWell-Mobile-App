@@ -6,11 +6,12 @@ import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
-    AppointmentRecord,
-    getCounsellorAppointment,
-    SharedCheckIn,
-    updateAppointmentStatus,
+  AppointmentRecord,
+  getCounsellorAppointment,
+  SharedCheckIn,
+  updateAppointmentStatus,
 } from '@/services/counsellingService';
+import { addAppointmentToDeviceCalendar } from '@/utils/deviceCalendar';
 
 // NEW: counsellor appointment details (Milestone 02 "Appointment Details" screen).
 export default function CounsellorAppointmentDetailScreen() {
@@ -56,6 +57,18 @@ export default function CounsellorAppointmentDetailScreen() {
     }
   };
 
+  // Opens the phone's calendar with this booking pre-filled; the counsellor picks the account and saves.
+  const addToCalendar = async () => {
+    if (!appointment) return;
+    setError('');
+    try {
+      const result = await addAppointmentToDeviceCalendar(appointment);
+      if (result !== 'cancelled') setMessage('Sent to your calendar app.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to open your calendar.');
+    }
+  };
+
   const confirmCancel = () => {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.confirm('Cancel this appointment? The student will be notified.')) void change('cancelled');
@@ -91,6 +104,11 @@ export default function CounsellorAppointmentDetailScreen() {
             <Text style={styles.label}>Status</Text>
             <Text style={styles.value}>{appointment.status}</Text>
             <Text style={styles.sync}>✓ Synced to your UniWell calendar automatically</Text>
+            {['pending', 'confirmed'].includes(appointment.status) && !past ? (
+              <Pressable accessibilityRole="button" onPress={() => void addToCalendar()} style={styles.calendarBtn}>
+                <Text style={styles.calendarBtnText}>Add to my phone's calendar</Text>
+              </Pressable>
+            ) : null}
           </SurfaceCard>
 
           <SectionHeading title="Student wellbeing summary" />
@@ -130,6 +148,8 @@ const styles = StyleSheet.create({
   value: { color: Colors.accent, fontSize: 16, fontWeight: '800', textTransform: 'capitalize' },
   detail: { color: Colors.muted, fontSize: 14 },
   sync: { marginTop: Space.md, color: Colors.success, fontSize: 13, fontWeight: '800' },
+  calendarBtn: { marginTop: Space.sm, minHeight: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.paleBlue, borderWidth: 1, borderColor: Colors.primary },
+  calendarBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '800' },
   actions: { flexDirection: 'row', gap: Space.sm },
   primary: { flex: 1, minHeight: 50, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary },
   primaryText: { color: Colors.accent, fontSize: 15, fontWeight: '800' },

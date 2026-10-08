@@ -15,6 +15,8 @@ router.get("/me", authorize("counsellor"), (req, res) => res.status(200).json({
   counsellor: {
     _id: req.userRecord._id,
     name: req.userRecord.name,
+    email: req.userRecord.email,
+    status: req.userRecord.status,
     phoneNumber: req.userRecord.phoneNumber || "",
     qualification: req.userRecord.qualification || "",
     specialization: req.userRecord.specialization || "",

@@ -24,7 +24,7 @@ const appointmentSchema = new mongoose.Schema(
     durationMinutes: {
       type: Number,
       required: true,
-      enum: [30],
+      enum: [15, 30, 45, 60, 90],
       default: 30
     },
     sessionType: {

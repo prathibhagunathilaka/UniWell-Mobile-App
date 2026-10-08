@@ -7,6 +7,12 @@ const { buildCalendar } = require("../utils/ical");
 
 const allowedSessionTypes = ["in-person", "online", "phone"];
 
+// Counsellors choose the slot length. Every slot reserves one key per 15-minute block it covers,
+// so the unique index on (counsellorId, slotKeys) still rejects any overlap, whatever the length.
+const allowedDurations = [15, 30, 45, 60, 90];
+const buildSlotKeys = (startsAt, durationMinutes) =>
+  Array.from({ length: durationMinutes / 15 }, (_, i) => new Date(startsAt.getTime() + i * 15 * 60 * 1000));
+
 const createAvailability = async (req, res) => {
   const startsAt = new Date(req.body?.startsAt);
   const durationMinutes = Number(req.body?.durationMinutes || 30);
@@ -14,12 +20,12 @@ const createAvailability = async (req, res) => {
     !Number.isFinite(startsAt.getTime()) ||
     startsAt <= new Date() ||
     startsAt > new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) ||
-    durationMinutes !== 30 ||
+    !allowedDurations.includes(durationMinutes) ||
     startsAt.getUTCMinutes() % 15 !== 0 ||
     startsAt.getUTCSeconds() !== 0 ||
     startsAt.getUTCMilliseconds() !== 0
   ) {
-    return res.status(400).json({ message: "Choose a future start time on a 30-minute boundary." });
+    return res.status(400).json({ message: "Choose a future start time on a 15-minute boundary and a slot length of 15, 30, 45, 60 or 90 minutes." });
   }
 
   try {
@@ -27,10 +33,7 @@ const createAvailability = async (req, res) => {
       counsellorId: req.user.id,
       startsAt,
       durationMinutes,
-      slotKeys: [
-        new Date(startsAt.getTime()),
-        new Date(startsAt.getTime() + 15 * 60 * 1000)
-      ],
+      slotKeys: buildSlotKeys(startsAt, durationMinutes),
       status: "available"
     });
     return res.status(201).json({ slot: appointment });
@@ -300,9 +303,13 @@ const cancelStudentAppointment = async (req, res) => {
 // (addresses usability issue U6: no conflict handling in calendar sync).
 // ---------------------------------------------------------------------------
 const createAvailabilityBulk = async (req, res) => {
-  const requested = Array.isArray(req.body?.slots) ? req.body.slots.slice(0, 60) : [];
+  const requested = Array.isArray(req.body?.slots) ? req.body.slots.slice(0, 200) : [];
   if (!requested.length) {
     return res.status(400).json({ message: "Provide at least one time slot." });
+  }
+  const durationMinutes = Number(req.body?.durationMinutes || 30);
+  if (!allowedDurations.includes(durationMinutes)) {
+    return res.status(400).json({ message: "Slot length must be 15, 30, 45, 60 or 90 minutes." });
   }
 
   const created = [];
@@ -326,8 +333,8 @@ const createAvailabilityBulk = async (req, res) => {
       const slot = await Appointment.create({
         counsellorId: req.user.id,
         startsAt,
-        durationMinutes: 30,
-        slotKeys: [new Date(startsAt.getTime()), new Date(startsAt.getTime() + 15 * 60 * 1000)],
+        durationMinutes,
+        slotKeys: buildSlotKeys(startsAt, durationMinutes),
         status: "available"
       });
       created.push({ _id: slot._id, startsAt: slot.startsAt });
