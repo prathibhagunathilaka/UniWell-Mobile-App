@@ -4,6 +4,7 @@ import { Alert, Platform, Pressable, Share, StyleSheet, Text, View } from 'react
 
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
+import { AppointmentStatusTones } from '@/constants/appointmentStatus';
 import { WellbeingColors as Colors, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { AppointmentRecord, cancelStudentAppointment, getStudentAppointment, getStudentAppointmentCalendar, submitSessionFeedback } from '@/services/counsellingService';
 
@@ -120,7 +121,7 @@ export default function StudentAppointmentDetailsScreen() {
       {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
       <InlineMessage tone="success">{notice}</InlineMessage>
       {appointment ? (
-        <SurfaceCard style={styles.card}>
+        <SurfaceCard style={[styles.card, { backgroundColor: AppointmentStatusTones[appointment.status].cardBg, borderColor: AppointmentStatusTones[appointment.status].accent }]}>
           {confirmation === '1' ? <Text style={styles.confirmation}>Booking submitted successfully</Text> : null}
           <Text style={styles.label}>Counsellor</Text>
           <Text style={styles.value}>{appointment.counsellorId?.name || 'Counsellor'}</Text>
@@ -132,7 +133,10 @@ export default function StudentAppointmentDetailsScreen() {
           <Text style={styles.label}>Session</Text>
           <Text style={styles.value}>{appointment.sessionType.replace('-', ' ')} · {appointment.durationMinutes} minutes</Text>
           <Text style={styles.label}>Status</Text>
-          <Text style={styles.value}>{statusLabels[appointment.status]}</Text>
+          <View style={[styles.statusPill, { backgroundColor: AppointmentStatusTones[appointment.status].pill }]}>
+            <View style={[styles.statusDot, { backgroundColor: AppointmentStatusTones[appointment.status].accent }]} />
+            <Text style={[styles.statusText, { color: AppointmentStatusTones[appointment.status].text }]}>{statusLabels[appointment.status]}</Text>
+          </View>
           <Text style={styles.label}>Reminders</Text>
           <Text style={styles.detail}>You will get a notification 24 hours and 1 hour before the session.</Text>
           {canCancel ? (
@@ -184,6 +188,9 @@ export default function StudentAppointmentDetailsScreen() {
 const styles = StyleSheet.create({
   page: { gap: Space.md },
   card: { gap: Space.xs },
+  statusPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Space.md, paddingVertical: 6, borderRadius: 999 },
+  statusDot: { width: 9, height: 9, borderRadius: 5 },
+  statusText: { fontSize: 14, fontWeight: '800' },
   label: { marginTop: Space.sm, color: Colors.muted, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   value: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
   detail: { color: Colors.muted, fontSize: 14 },

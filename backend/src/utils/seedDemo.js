@@ -88,7 +88,7 @@ const buildDataset = (now = Date.now()) => {
     faculty: faculties[i % faculties.length],
     year: (i % 4) + 1,
     phoneNumber: `07720000${String(i + 1).padStart(2, "0")}`,
-    ...(i === 0 ? { trustedPerson: { name: "Kumari Kariyawasam", phoneNumber: "0711234567", relationship: "Mother" } } : {})
+    ...(i === 0 ? { trustedPeople: [{ name: "Kumari Kariyawasam", phoneNumber: "0711234567", relationship: "Mother" }, { name: "Nimal Perera", phoneNumber: "0777654321", relationship: "Friend" }] } : {})
   }));
 
   const admin = { key: "admin", name: "Demo Administrator", email: `admin${DEMO_DOMAIN}`, username: "demoadmin", role: "admin" };

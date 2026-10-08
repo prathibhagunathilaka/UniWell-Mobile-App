@@ -108,11 +108,27 @@ export default function CounsellorProfileScreen() {
       {loading ? <LoadingState label="Loading counsellor profile..." /> : null}
       {!loading && counsellor ? (
         <>
-          <PageHeading title={counsellor.name} subtitle={counsellor.specialization} />
-          <SurfaceCard style={styles.profile}>
-            <Text style={styles.qualification}>{counsellor.qualification}</Text>
-            <Text style={styles.experience}>{counsellor.yearsOfExperience} years of experience</Text>
-          </SurfaceCard>
+          <PageHeading title="Book a session" subtitle="Check who you are booking with, then choose a time." />
+          <View style={styles.profileCard}>
+            <View style={styles.profileBanner} />
+            <View style={styles.profileBody}>
+              <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>{counsellor.name.trim().charAt(0).toUpperCase()}</Text></View>
+              <Text style={styles.profileName}>{counsellor.name}</Text>
+              <Text style={styles.profileSpecialization}>{counsellor.specialization}</Text>
+              <View style={styles.profileDivider} />
+              <View style={styles.factRow}>
+                <View style={styles.fact}>
+                  <Text style={styles.factLabel}>Qualification</Text>
+                  <Text style={styles.factValue}>{counsellor.qualification}</Text>
+                </View>
+                <View style={styles.fact}>
+                  <Text style={styles.factLabel}>Experience</Text>
+                  <Text style={styles.factValue}>{counsellor.yearsOfExperience} years</Text>
+                </View>
+              </View>
+              <View style={styles.verified}><Text style={styles.verifiedText}>✓ Approved university counsellor</Text></View>
+            </View>
+          </View>
           {rescheduleFrom ? <InlineMessage tone="info">You are rescheduling. Your current booking stays until the new time is confirmed.</InlineMessage> : null}
           <SectionHeading title="Choose a day and time" detail="Times are shown in your local timezone." />
           {slots.length ? (
@@ -212,7 +228,41 @@ export default function CounsellorProfileScreen() {
 
 const styles = StyleSheet.create({
   page: { gap: Space.md },
-  profile: { gap: Space.xs, backgroundColor: Colors.paleBlue },
+  profileCard: {
+    borderRadius: Radius.xl,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    shadowColor: '#112E3C',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  profileBanner: { height: 64, backgroundColor: Colors.secondary },
+  profileBody: { alignItems: 'center', gap: 4, paddingHorizontal: Space.md, paddingBottom: Space.md },
+  profileAvatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    marginTop: -38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.paleCoral,
+    borderWidth: 4,
+    borderColor: Colors.white,
+  },
+  profileAvatarText: { color: Colors.accent, fontSize: 30, fontWeight: '900' },
+  profileName: { color: Colors.accent, fontSize: 20, fontWeight: '900', textAlign: 'center' },
+  profileSpecialization: { color: Colors.primary, fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  profileDivider: { alignSelf: 'stretch', height: 1, backgroundColor: Colors.border, marginVertical: Space.sm },
+  factRow: { flexDirection: 'row', alignSelf: 'stretch', gap: Space.sm },
+  fact: { flex: 1, gap: 2, padding: Space.sm, borderRadius: Radius.md, backgroundColor: Colors.paleBlue },
+  factLabel: { color: Colors.muted, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  factValue: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  verified: { marginTop: Space.sm, paddingHorizontal: Space.md, paddingVertical: 6, borderRadius: Radius.pill, backgroundColor: '#D6F0E4' },
+  verifiedText: { color: Colors.success, fontSize: 12, fontWeight: '800' },
   qualification: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
   experience: { color: Colors.muted, fontSize: 14 },
   slot: {

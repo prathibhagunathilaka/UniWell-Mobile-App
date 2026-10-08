@@ -1,3 +1,4 @@
+import { Href } from 'expo-router';
 import { PropsWithChildren } from 'react';
 import {
   ActivityIndicator,
@@ -10,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
 
@@ -20,10 +22,12 @@ export function AuthPage({
   title,
   subtitle,
   children,
-}: PropsWithChildren<{ title: string; subtitle: string }>) {
+  back,
+}: PropsWithChildren<{ title: string; subtitle: string; back?: { fallback: Href; label?: string } }>) {
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.content}>
+        {back ? <ScreenBackButton fallback={back.fallback} label={back.label} /> : null}
         <View style={styles.brandRow}>
           <View style={styles.brandMark}>
             <Text style={styles.brandText}>U</Text>

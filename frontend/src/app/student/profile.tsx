@@ -1,4 +1,3 @@
-import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -103,10 +102,11 @@ export default function StudentProfileScreen() {
   };
 
   return (
-    <AuthPage title="Student Profile" subtitle="Review and manage the profile information connected to your account.">
-      <Link href="/student/dashboard" asChild>
-        <Pressable accessibilityRole="button"><AuthLinkText>‹ Back to wellbeing home</AuthLinkText></Pressable>
-      </Link>
+    <AuthPage
+      title="Student Profile"
+      subtitle="Review and manage the profile information connected to your account."
+      back={{ fallback: '/student/dashboard', label: 'Back' }}
+    >
 
       <SurfaceCard style={styles.identityCard}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{user?.name?.trim().charAt(0).toUpperCase() || 'U'}</Text></View>

@@ -1,12 +1,12 @@
 import { Href, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { HugIllustration } from '@/components/wellbeing/HugIllustration';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
   PageHeading,
   SurfaceCard,
-  WellbeingIllustration,
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
@@ -61,7 +61,7 @@ export default function EmergencySupportScreen() {
       <ScreenBackButton fallback="/student/dashboard" label="Dashboard" />
       <Eyebrow>Support when you need it</Eyebrow>
       <PageHeading title="Emergency Support" subtitle="Clear next steps and people who can help. Take this one moment at a time." />
-      <WellbeingIllustration label="A steady, reassuring illustration for support information" />
+      <HugIllustration />
 
       <View style={styles.alertBanner}>
         <View style={styles.alertIcon}><Text style={styles.alertIconText}>!</Text></View>

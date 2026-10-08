@@ -79,22 +79,22 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    // Legacy single contact (kept only so old data can be migrated automatically)
     trustedPerson: {
-      name: {
-        type: String,
-        trim: true,
-        maxlength: 100
-      },
-      phoneNumber: {
-        type: String,
-        trim: true,
-        maxlength: 25
-      },
-      relationship: {
-        type: String,
-        trim: true,
-        maxlength: 60
-      }
+      name: { type: String, trim: true, maxlength: 100 },
+      phoneNumber: { type: String, trim: true, maxlength: 25 },
+      relationship: { type: String, trim: true, maxlength: 60 }
+    },
+    // Multiple trusted people (max 5, enforced in supportController)
+    trustedPeople: {
+      type: [
+        {
+          name: { type: String, trim: true, required: true, maxlength: 100 },
+          phoneNumber: { type: String, trim: true, required: true, maxlength: 25 },
+          relationship: { type: String, trim: true, required: true, maxlength: 60 }
+        }
+      ],
+      default: []
     },
 
     role: {

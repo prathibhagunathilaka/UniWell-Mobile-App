@@ -188,6 +188,7 @@ export const updateCounsellorApproval = (id: string, status: 'active' | 'suspend
   });
 
 export type TrustedPerson = {
+  _id?: string;
   name: string;
   phoneNumber: string;
   relationship: string;
@@ -203,14 +204,22 @@ export type SupportContacts = {
 export const getSupportContacts = () =>
   apiFetch<SupportContacts>('/support/contacts');
 
-export const getTrustedPerson = () =>
-  apiFetch<{ trustedPerson: TrustedPerson | null }>('/support/trusted-person');
+type TrustedPeopleResponse = { trustedPeople: TrustedPerson[]; max?: number };
 
-export const saveTrustedPerson = (trustedPerson: TrustedPerson) =>
-  apiFetch<{ trustedPerson: TrustedPerson }>('/support/trusted-person', {
-    method: 'PUT',
-    body: JSON.stringify(trustedPerson),
+export const getTrustedPeople = () =>
+  apiFetch<TrustedPeopleResponse>('/support/trusted-people');
+
+export const addTrustedPerson = (person: TrustedPerson) =>
+  apiFetch<TrustedPeopleResponse>('/support/trusted-people', {
+    method: 'POST',
+    body: JSON.stringify(person),
   });
 
-export const deleteTrustedPerson = () =>
-  apiFetch<{ message: string }>('/support/trusted-person', { method: 'DELETE' });
+export const updateTrustedPerson = (id: string, person: TrustedPerson) =>
+  apiFetch<TrustedPeopleResponse>(`/support/trusted-people/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(person),
+  });
+
+export const deleteTrustedPerson = (id: string) =>
+  apiFetch<TrustedPeopleResponse>(`/support/trusted-people/${id}`, { method: 'DELETE' });

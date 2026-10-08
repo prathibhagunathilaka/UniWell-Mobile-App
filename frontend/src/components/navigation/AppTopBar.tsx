@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   avatarText: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
   iconButton: { width: 42, height: 42, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
 
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(17, 46, 60, 0.28)' },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(17, 46, 60, 0.28)' },
   sheet: {
     position: 'absolute',
     left: Space.md,

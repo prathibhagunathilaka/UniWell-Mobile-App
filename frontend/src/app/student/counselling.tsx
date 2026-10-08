@@ -104,14 +104,19 @@ export default function CounsellingDirectoryScreen() {
               asChild
             >
               <Pressable accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-                <View style={styles.avatar}><Text style={styles.avatarText}>{counsellor.name.trim().charAt(0).toUpperCase()}</Text></View>
-                <View style={styles.copy}>
-                  <Text style={styles.name}>{counsellor.name}</Text>
-                  <Text style={styles.specialization}>{counsellor.specialization}</Text>
-                  <Text style={styles.qualification}>{counsellor.qualification} · {counsellor.yearsOfExperience} years of experience</Text>
-                  {counsellor.nextAvailableAt ? <Text style={styles.next}>{nextLabel(counsellor.nextAvailableAt)}</Text> : null}
+                <View style={styles.cardMain}>
+                  <View style={styles.avatar}><Text style={styles.avatarText}>{counsellor.name.trim().charAt(0).toUpperCase()}</Text></View>
+                  <View style={styles.copy}>
+                    <Text style={styles.name}>{counsellor.name}</Text>
+                    <Text style={styles.specialization}>{counsellor.specialization}</Text>
+                    <Text style={styles.qualification}>{counsellor.qualification}</Text>
+                  </View>
                 </View>
-                <Text style={styles.chevron}>›</Text>
+                <View style={styles.chipRow}>
+                  <View style={styles.chip}><Text style={styles.chipText}>{counsellor.yearsOfExperience} yrs experience</Text></View>
+                  {counsellor.nextAvailableAt ? <View style={[styles.chip, styles.chipNext]}><Text style={[styles.chipText, styles.next]}>{nextLabel(counsellor.nextAvailableAt)}</Text></View> : null}
+                </View>
+                <View style={styles.cta}><Text style={styles.ctaText}>View profile & book</Text><Text style={styles.ctaArrow}>›</Text></View>
               </Pressable>
             </Link>
           ))}
@@ -148,22 +153,35 @@ const styles = StyleSheet.create({
   next: { color: Colors.success, fontSize: 12, fontWeight: '800' },
   list: { gap: Space.sm },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.md,
+    gap: Space.sm,
     padding: Space.md,
     borderRadius: Radius.lg,
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.border,
+    borderTopWidth: 4,
+    borderTopColor: Colors.primary,
+    shadowColor: '#112E3C',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
+  cardMain: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.xs },
+  chip: { paddingHorizontal: Space.sm, paddingVertical: 4, borderRadius: Radius.pill, backgroundColor: Colors.paleBlue },
+  chipNext: { backgroundColor: '#D6F0E4' },
+  chipText: { color: Colors.accent, fontSize: 12, fontWeight: '700' },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: Space.sm, borderTopWidth: 1, borderTopColor: Colors.border },
+  ctaText: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
+  ctaArrow: { color: Colors.primary, fontSize: 22, fontWeight: '700' },
   pressed: { opacity: 0.78 },
   avatar: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 24,
+    borderRadius: 28,
     backgroundColor: Colors.paleCoral,
   },
   avatarText: { color: Colors.accent, fontSize: 20, fontWeight: '800' },
