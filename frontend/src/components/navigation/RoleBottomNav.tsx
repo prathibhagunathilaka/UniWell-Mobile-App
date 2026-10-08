@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Href, router, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,11 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUnreadCount } from '@/services/notificationService';
 
 type Role = 'student' | 'counsellor' | 'admin';
+type IconName = keyof typeof Ionicons.glyphMap;
 
 type Tab = {
   key: string;
   label: string;
-  glyph: string;
+  icon: IconName;
+  iconActive: IconName;
   href?: Href;
   // Path prefixes that keep this tab highlighted (so sub-screens still show where you are).
   match?: string[];
@@ -24,23 +27,23 @@ type Tab = {
 // NEW: one constant bottom bar for every signed-in screen, with tabs chosen by role.
 const TABS: Record<Role, Tab[]> = {
   student: [
-    { key: 'home', label: 'Home', glyph: '🏠', href: '/student/dashboard', match: ['/student/dashboard', '/student/index', '/student/profile', '/student/resource', '/student/resources', '/student/support', '/student/trusted-person', '/student/notifications'], exact: ['/student'] },
-    { key: 'checkin', label: 'Check-in', glyph: '📝', href: '/student/check-in', match: ['/student/check-in', '/student/check-in-history', '/student/check-in-result'] },
-    { key: 'book', label: 'Counsellors', glyph: '🔎', href: '/student/counselling', match: ['/student/counselling'] },
-    { key: 'sessions', label: 'Sessions', glyph: '📅', href: '/student/appointments', match: ['/student/appointments'] },
-    { key: 'help', label: 'Help now', glyph: '🆘', href: '/student/emergency', match: ['/student/emergency'] },
+    { key: 'home', label: 'Home', icon: 'home-outline', iconActive: 'home', href: '/student/dashboard', match: ['/student/dashboard', '/student/index', '/student/profile', '/student/resource', '/student/resources', '/student/support', '/student/trusted-person', '/student/notifications'], exact: ['/student'] },
+    { key: 'checkin', label: 'Check-in', icon: 'create-outline', iconActive: 'create', href: '/student/check-in', match: ['/student/check-in', '/student/check-in-history', '/student/check-in-result'] },
+    { key: 'book', label: 'Counsellors', icon: 'search-outline', iconActive: 'search', href: '/student/counselling', match: ['/student/counselling'] },
+    { key: 'sessions', label: 'Sessions', icon: 'calendar-outline', iconActive: 'calendar', href: '/student/appointments', match: ['/student/appointments'] },
+    { key: 'help', label: 'Help now', icon: 'alert-circle-outline', iconActive: 'alert-circle', href: '/student/emergency', match: ['/student/emergency'] },
   ],
   counsellor: [
-    { key: 'home', label: 'Home', glyph: '🏠', href: '/counsellor', exact: ['/counsellor'], match: ['/counsellor/appointments'] },
-    { key: 'calendar', label: 'Calendar', glyph: '📅', href: '/counsellor/calendar', match: ['/counsellor/calendar'] },
-    { key: 'availability', label: 'Availability', glyph: '🕒', href: '/counsellor/availability', match: ['/counsellor/availability'] },
-    { key: 'sync', label: 'Sync', glyph: '🔄', href: '/counsellor/sync', match: ['/counsellor/sync'] },
-    { key: 'alerts', label: 'Alerts', glyph: '🔔', href: '/counsellor/notifications', match: ['/counsellor/notifications'], badge: 'unread' },
+    { key: 'home', label: 'Home', icon: 'home-outline', iconActive: 'home', href: '/counsellor', exact: ['/counsellor'], match: ['/counsellor/appointments'] },
+    { key: 'calendar', label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', href: '/counsellor/calendar', match: ['/counsellor/calendar'] },
+    { key: 'availability', label: 'Availability', icon: 'time-outline', iconActive: 'time', href: '/counsellor/availability', match: ['/counsellor/availability'] },
+    { key: 'sync', label: 'Sync', icon: 'sync-outline', iconActive: 'sync', href: '/counsellor/sync', match: ['/counsellor/sync'] },
+    { key: 'alerts', label: 'Alerts', icon: 'notifications-outline', iconActive: 'notifications', href: '/counsellor/notifications', match: ['/counsellor/notifications'], badge: 'unread' },
   ],
   admin: [
-    { key: 'approvals', label: 'Approvals', glyph: '🛡️', href: '/admin', exact: ['/admin'] },
-    { key: 'reports', label: 'Reports', glyph: '📊', href: '/admin/reports', match: ['/admin/reports'] },
-    { key: 'logout', label: 'Sign out', glyph: '🚪', action: 'logout' },
+    { key: 'approvals', label: 'Approvals', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', href: '/admin', exact: ['/admin'] },
+    { key: 'reports', label: 'Reports', icon: 'bar-chart-outline', iconActive: 'bar-chart', href: '/admin/reports', match: ['/admin/reports'] },
+    { key: 'logout', label: 'Sign out', icon: 'log-out-outline', iconActive: 'log-out', action: 'logout' },
   ],
 };
 
@@ -119,7 +122,11 @@ export function RoleBottomNav() {
           >
             <View style={[styles.indicator, active && styles.indicatorOn]} />
             <View>
-              <Text style={[styles.glyph, !active && styles.glyphIdle]}>{tab.glyph}</Text>
+              <Ionicons
+                name={active ? tab.iconActive : tab.icon}
+                size={24}
+                color={active ? Colors.accent : urgent ? Colors.error : Colors.muted}
+              />
               {badge > 0 ? (
                 <View style={styles.badge}><Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text></View>
               ) : null}
@@ -146,8 +153,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   indicator: { alignSelf: 'stretch', height: 3, marginBottom: 5, backgroundColor: 'transparent', borderBottomLeftRadius: 3, borderBottomRightRadius: 3 },
   indicatorOn: { backgroundColor: Colors.primary },
-  glyph: { fontSize: 20 },
-  glyphIdle: { opacity: 0.65 },
   label: { color: Colors.muted, fontSize: 11, fontWeight: '700' },
   labelOn: { color: Colors.accent, fontWeight: '900' },
   labelUrgent: { color: Colors.error },

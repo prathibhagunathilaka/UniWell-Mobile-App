@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AuthButton, AuthField } from '@/components/auth/AuthUI';
-import { NotificationBell } from '@/components/wellbeing/NotificationBell';
 import { QuickLinks } from '@/components/wellbeing/QuickLinks';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
@@ -45,7 +44,7 @@ const emptyResource: CounsellorResourceInput = {
 };
 
 export default function CounsellorDashboardScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<CounsellorProfile | null>(null);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [resources, setResources] = useState<CounsellorResource[]>([]);
@@ -190,14 +189,7 @@ export default function CounsellorDashboardScreen() {
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
       <View style={styles.topBar}>
-        <View>
-          <Text style={styles.brand}>UniWell · Counsellor</Text>
-          <Text style={styles.welcome}>Hello, {user?.name || profile?.name || 'Counsellor'}</Text>
-        </View>
-        <NotificationBell role="counsellor" />
-        <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.logout}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </Pressable>
+        <Text style={styles.welcome}>Hello, {user?.name || profile?.name || 'Counsellor'}</Text>
       </View>
       <QuickLinks links={[
         { label: 'Calendar', detail: 'Week view of all bookings', href: '/counsellor/calendar' },
@@ -319,10 +311,7 @@ const styles = StyleSheet.create({
   todaySub: { color: Colors.muted, fontSize: 13 },
   page: { gap: Space.md },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
-  brand: { color: Colors.primary, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   welcome: { color: Colors.accent, fontSize: 20, fontWeight: '800' },
-  logout: { minHeight: 42, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
-  logoutText: { color: Colors.accent, fontWeight: '800', fontSize: 13 },
   form: { gap: Space.sm },
   categoryRow: { flexDirection: 'row', gap: Space.xs, flexWrap: 'wrap' },
   category: { paddingHorizontal: Space.sm, paddingVertical: Space.xs, borderRadius: Radius.pill, backgroundColor: Colors.paleBlue },

@@ -1,4 +1,3 @@
-import { NotificationBell } from '@/components/wellbeing/NotificationBell';
 import { Link, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -65,7 +64,7 @@ const quickActions = [
 ];
 
 export default function StudentDashboardScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [latestCheckIn, setLatestCheckIn] = useState<CheckInRecord | null>(null);
   const [trend, setTrend] = useState<CheckInTrendPoint[]>([]);
   const [trendError, setTrendError] = useState('');
@@ -162,25 +161,6 @@ export default function StudentDashboardScreen() {
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
-      <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}><Text style={styles.brandLetter}>U</Text></View>
-          <Text style={styles.brandName}>UniWell</Text>
-        </View>
-        <NotificationBell role="student" />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open student profile"
-          onPress={() => router.push('/student/profile')}
-          style={styles.profileButton}
-        >
-          <Text style={styles.profileButtonText}>{user?.name?.trim().charAt(0).toUpperCase() || 'U'}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.logoutButton}>
-          <Text style={styles.logoutLabel}>Log out</Text>
-        </Pressable>
-      </View>
-
       <WellbeingIllustration label="A gentle illustration for your wellbeing dashboard" />
 
       <View style={styles.greeting}>
@@ -339,63 +319,6 @@ export default function StudentDashboardScreen() {
 const styles = StyleSheet.create({
   page: {
     paddingTop: Space.md,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.sm,
-  },
-  brandMark: {
-    width: 35,
-    height: 35,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-  },
-  brandLetter: {
-    color: Colors.white,
-    fontWeight: '800',
-    fontSize: 18,
-  },
-  brandName: {
-    color: Colors.accent,
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  profileButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.paleBlue,
-    borderWidth: 1,
-    borderColor: Colors.secondary,
-  },
-  profileButtonText: {
-    color: Colors.accent,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  logoutButton: {
-    minHeight: 40,
-    justifyContent: 'center',
-    paddingHorizontal: Space.md,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  logoutLabel: {
-    color: Colors.accent,
-    fontWeight: '700',
-    fontSize: 13,
   },
   greeting: {
     gap: Space.xs,
