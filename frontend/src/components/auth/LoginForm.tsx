@@ -2,6 +2,8 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+// eslint-disable-next-line import/no-unresolved
+
 import { AuthButton, AuthField, AuthLinkText, AuthMessage, AuthPage } from './AuthUI';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/services/authService';
