@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+// eslint-disable-next-line import/no-unresolved
+
 const userSchema = new mongoose.Schema(
   {
     name: {

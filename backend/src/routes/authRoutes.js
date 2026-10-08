@@ -1,4 +1,7 @@
 const express = require("express");
+
+// eslint-disable-next-line import/no-unresolved
+
 const { ipKeyGenerator, rateLimit } = require("express-rate-limit");
 const {
   registerStudent,

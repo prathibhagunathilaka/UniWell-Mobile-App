@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 
+// eslint-disable-next-line import/no-unresolved
+
 const RegistrationOtp = require("../models/RegistrationOtp");
 const User = require("../models/User");
 const {
