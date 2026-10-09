@@ -94,6 +94,15 @@ export default function StudentAppointmentsScreen() {
     <WellbeingPage contentContainerStyle={styles.page}>
       <ScreenBackButton fallback="/student/dashboard" label="Dashboard" />
       <PageHeading title="My counselling sessions" subtitle="Review upcoming and previous sessions with your counsellors." />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: loading, busy: loading }}
+        disabled={loading}
+        onPress={() => void load()}
+        style={styles.refreshButton}
+      >
+        <Text style={styles.refreshLabel}>{loading ? 'Refreshing appointments...' : 'Refresh appointments'}</Text>
+      </Pressable>
       {loading ? <LoadingState label="Loading your appointments..." /> : null}
       {error ? (
         <View style={styles.state}>
@@ -130,6 +139,8 @@ const styles = StyleSheet.create({
   page: { gap: Space.md },
   state: { gap: Space.sm },
   retry: { color: Colors.primary, fontSize: 14, fontWeight: '800', paddingVertical: Space.xs },
+  refreshButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: Space.md, borderRadius: Radius.md, backgroundColor: Colors.paleBlue },
+  refreshLabel: { color: Colors.accent, fontSize: 13, fontWeight: '800' },
   empty: { gap: Space.sm },
   emptyTitle: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
   meta: { color: Colors.muted, fontSize: 13, textTransform: 'capitalize' },
