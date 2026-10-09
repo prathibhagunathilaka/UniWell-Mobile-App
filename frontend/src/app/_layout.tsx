@@ -1,6 +1,7 @@
-// Keep these two imports first: they install the app-wide text scaling and dark-mode wrappers
+// Keep these imports first: they install the app-wide text scaling, dark-mode and translation wrappers
 // before any screen renders.
 import { FontScaleProvider } from '@/contexts/FontScaleContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AppThemeProvider, DARK_COLORS, useAppTheme } from '@/contexts/ThemeContext';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -57,7 +58,9 @@ export default function RootLayout() {
   return (
     <FontScaleProvider>
       <AppThemeProvider>
-        <ThemedApp />
+        <LanguageProvider>
+          <ThemedApp />
+        </LanguageProvider>
       </AppThemeProvider>
     </FontScaleProvider>
   );
