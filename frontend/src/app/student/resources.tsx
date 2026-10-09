@@ -14,23 +14,11 @@ import {
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
-import { getResources, ResourceItem } from '@/services/resourceService';
+import { getResources, RESOURCE_CATEGORIES, ResourceCategory, ResourceItem } from '@/services/resourceService';
 
-const categories = [
-  'All',
-  'Stress Management',
-  'Anxiety & Worry',
-  'Sleep',
-  'Sleep & Rest',
-  'Academic Pressure',
-  'Time Management',
-  'Emotional Wellbeing',
-  'Relaxation / Mindfulness',
-  'Self-Care',
-  'Study-Life Balance',
-];
+const categories: ('All' | ResourceCategory)[] = ['All', ...RESOURCE_CATEGORIES];
 
-const categoryIcon = (category: string) => {
+const categoryIcon = (category: ResourceCategory) => {
   if (category === 'Sleep' || category === 'Sleep & Rest') return '☾';
   if (category === 'Academic Pressure') return '▤';
   if (category === 'Anxiety & Worry') return '♡';
@@ -40,7 +28,7 @@ const categoryIcon = (category: string) => {
 };
 
 export default function ResourcesScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | ResourceCategory>('All');
   const [search, setSearch] = useState('');
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [resolvedCategory, setResolvedCategory] = useState<string | null>(null);
