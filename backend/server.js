@@ -11,6 +11,9 @@ const counsellorRoutes = require("./src/routes/counsellorRoutes");
 const appointmentRoutes = require("./src/routes/appointmentRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const supportRoutes = require("./src/routes/supportRoutes");
+const notificationRoutes = require("./src/routes/notificationRoutes");
+const calendarRoutes = require("./src/routes/calendarRoutes");
+const { startReminderScheduler } = require("./src/utils/reminderScheduler");
 const { seedResources } = require("./src/utils/seedResources");
 const { verifySmtpConfiguration } = require("./src/utils/authOtp");
 const { seedAdmin } = require("./src/utils/createAdmin");
@@ -30,6 +33,8 @@ app.use("/api/counsellors", counsellorRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/calendar", calendarRoutes);
 app.use("/api", (req, res) => {
   res.status(404).json({
     success: false,
@@ -49,6 +54,7 @@ const startServer = async () => {
   await verifySmtpConfiguration();
   await connectDB();
   await seedResources();
+  startReminderScheduler();
   await seedAdmin();
 
   app.listen(PORT, () => {
