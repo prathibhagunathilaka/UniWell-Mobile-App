@@ -84,12 +84,7 @@ export default function CheckInScreen() {
       router.push({
         pathname: '/student/check-in-result',
         params: {
-          mood: checkIn.mood,
-          stressLevel: checkIn.stressLevel,
-          sleepQuality: checkIn.sleepQuality,
-          studyCoping: checkIn.studyCoping,
-          wellbeingLevel: checkIn.wellbeingLevel,
-          wellbeingScore: String(checkIn.wellbeingScore),
+          id: checkIn._id,
         },
       });
     } catch (error) {
