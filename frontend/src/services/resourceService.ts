@@ -1,10 +1,25 @@
 import { apiFetch } from './api';
 
+export const RESOURCE_CATEGORIES = [
+  'Stress Management',
+  'Anxiety & Worry',
+  'Sleep',
+  'Academic Pressure',
+  'Time Management',
+  'Emotional Wellbeing',
+  'Sleep & Rest',
+  'Relaxation / Mindfulness',
+  'Self-Care',
+  'Study-Life Balance',
+] as const;
+
+export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
+
 export type ResourceItem = {
   _id: string;
   title: string;
   description: string;
-  category: string;
+  category: ResourceCategory;
   content: string;
   externalLink?: string;
   videoUrl?: string;
@@ -13,8 +28,8 @@ export type ResourceItem = {
   isActive: boolean;
 };
 
-export const getResources = async (category?: string) => {
-  const params = category && category !== 'All' ? `?category=${encodeURIComponent(category)}` : '';
+export const getResources = async (category?: ResourceCategory) => {
+  const params = category ? `?category=${encodeURIComponent(category)}` : '';
   return apiFetch<{ resources: ResourceItem[] }>(`/resources${params}`);
 };
 
