@@ -1,15 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
 import * as SystemUI from 'expo-system-ui';
 import {
-    createContext,
-    createElement,
-    forwardRef,
-    PropsWithChildren,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  createContext,
+  createElement,
+  forwardRef,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
 import { Appearance, Platform, useColorScheme as useSystemColorScheme } from 'react-native';
 
@@ -349,7 +349,10 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     try {
       if (typeof Appearance.setColorScheme === 'function') {
-        Appearance.setColorScheme(preference === 'System' ? null : scheme);
+        // Passing null makes the Android native module crash (non-null `style` parameter),
+        // so use 'unspecified' to hand control back to the OS on "System".
+        const nativeStyle = preference === 'System' ? 'unspecified' : scheme;
+        Appearance.setColorScheme(nativeStyle as unknown as 'light' | 'dark');
       }
     } catch {
       // Not supported on this platform: the in-app theme still works.
