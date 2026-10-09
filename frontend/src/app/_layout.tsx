@@ -9,6 +9,7 @@ import { View } from 'react-native';
 import { AuthRouteGuard } from '@/components/auth/AuthRouteGuard';
 import { AppTopBar } from '@/components/navigation/AppTopBar';
 import { RoleBottomNav } from '@/components/navigation/RoleBottomNav';
+import { PushRegistration } from '@/components/notifications/PushRegistration';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 const UniWellDarkTheme = {
@@ -29,6 +30,7 @@ function ThemedApp() {
     <ThemeProvider value={isDark ? UniWellDarkTheme : DefaultTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <AuthProvider>
+        <PushRegistration />
         <AuthRouteGuard>
           <View style={{ flex: 1, backgroundColor: isDark ? DARK_COLORS.background : undefined }}>
             <AppTopBar />

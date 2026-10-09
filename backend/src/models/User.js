@@ -75,6 +75,21 @@ const userSchema = new mongoose.Schema(
       pushEnabled: { type: Boolean, default: true },
       remindersEnabled: { type: Boolean, default: true }
     },
+    // NEW: phones registered for push notifications (max 5, newest kept). Hidden from normal queries.
+    pushTokens: {
+      type: [
+        new mongoose.Schema(
+          {
+            token: { type: String, required: true },
+            platform: { type: String, default: "android" },
+            updatedAt: { type: Date, default: Date.now }
+          },
+          { _id: false }
+        )
+      ],
+      default: [],
+      select: false
+    },
     // NEW: secret token for the counsellor's private calendar (.ics) subscription feed.
     calendarToken: {
       type: String,
