@@ -93,6 +93,29 @@ export const getStudentAppointmentCalendar = (id: string) =>
 export const cancelStudentAppointment = (id: string) =>
   apiFetch<{ appointment: AppointmentRecord }>(`/appointments/${id}/cancel`, { method: 'PATCH' });
 
+export const rescheduleStudentAppointment = async (
+  slotId: string,
+  sessionType: AppointmentRecord['sessionType'],
+  shareCheckIn: boolean,
+  previousAppointmentId: string,
+) => {
+  const bookingResponse = await createAppointment(slotId, sessionType, shareCheckIn);
+  try {
+    await cancelStudentAppointment(previousAppointmentId);
+    return {
+      appointment: bookingResponse.appointment,
+      previousAppointmentError: undefined,
+    };
+  } catch (cause) {
+    return {
+      appointment: bookingResponse.appointment,
+      previousAppointmentError: cause instanceof Error
+        ? cause
+        : new Error('The previous appointment could not be cancelled.'),
+    };
+  }
+};
+
 export type BulkAvailabilityResult = {
   created: { _id: string; startsAt: string }[];
   skipped: { startsAt: string; reason: string }[];
