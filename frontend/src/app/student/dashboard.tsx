@@ -95,9 +95,13 @@ export default function StudentDashboardScreen() {
     try {
       const response = await getStudentAppointments();
       const now = Date.now();
-      setUpcomingAppointments(response.appointments.filter((appointment) =>
-        new Date(appointment.startsAt).getTime() >= now &&
-        ['pending', 'confirmed'].includes(appointment.status)));
+      setUpcomingAppointments(response.appointments
+        .filter((appointment) => {
+          const startsAt = new Date(appointment.startsAt).getTime();
+          return Number.isFinite(startsAt) && startsAt >= now &&
+            ['pending', 'confirmed'].includes(appointment.status);
+        })
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()));
     } catch (cause) {
       setAppointmentsError(cause instanceof Error ? cause.message : 'Your appointments could not be loaded.');
     } finally {

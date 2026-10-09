@@ -124,7 +124,8 @@ export default function CheckInScreen() {
                     key={option}
                     accessibilityRole="radio"
                     accessibilityLabel={`${field === 'stressLevel' ? 'Stress' : field === 'sleepQuality' ? 'Sleep' : field === 'studyCoping' ? 'Study & Coping' : 'Mood'}: ${option}`}
-                    accessibilityState={{ selected }}
+                    accessibilityState={{ selected, disabled: isSubmitting }}
+                    disabled={isSubmitting}
                     onPress={() => handleSelect(field, option)}
                     style={[styles.optionButton, selected && styles.optionButtonSelected]}
                   >
@@ -145,6 +146,7 @@ export default function CheckInScreen() {
           <Text style={styles.noteHint}>Anything you would like to remember about how today feels?</Text>
           <TextInput
             multiline
+            editable={!isSubmitting}
             value={form.note}
             onChangeText={(value) => setForm((current) => ({ ...current, note: value }))}
             placeholder="Write a few words, or leave this blank..."
