@@ -57,8 +57,9 @@ export default function CheckInHistoryScreen() {
               <Text style={styles.level}>{checkIn.wellbeingLevel}</Text>
               <Text style={styles.score}>{checkIn.wellbeingScore.toFixed(1)} / 5</Text>
             </View>
-            <Text style={styles.date}>{new Date(checkIn.createdAt).toLocaleString()}</Text>
+            <Text style={styles.date}>{formatCheckInDate(checkIn.createdAt)}</Text>
             <Text style={styles.detail}>Mood: {checkIn.mood} · Stress: {checkIn.stressLevel}</Text>
+            {checkIn.note.trim() ? <Text style={styles.noteIndicator}>Personal note saved</Text> : null}
             <Text style={styles.open}>View result  ›</Text>
           </Pressable>
         </Link>
@@ -66,6 +67,11 @@ export default function CheckInHistoryScreen() {
     </WellbeingPage>
   );
 }
+
+const formatCheckInDate = (value: string) => {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleString() : 'Date unavailable';
+};
 
 const styles = StyleSheet.create({
   page: { gap: Space.md },
@@ -78,5 +84,6 @@ const styles = StyleSheet.create({
   score: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
   date: { color: Colors.muted, fontSize: 12 },
   detail: { color: Colors.accent, fontSize: 13 },
+  noteIndicator: { color: Colors.muted, fontSize: 12, fontWeight: '700' },
   open: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
 });
