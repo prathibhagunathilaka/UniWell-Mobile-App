@@ -51,15 +51,14 @@ const deleteAvailability = async (req, res) => {
     return res.status(400).json({ message: "Invalid availability ID." });
   }
   try {
-    const slot = await Appointment.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        counsellorId: req.user.id,
-        status: "available"
-      },
-      { $set: { status: "cancelled", reservesSlot: false } },
-      { new: true }
-    );
+    // Permanently deletes an unbooked slot (was a soft delete that left a "cancelled" row behind).
+    // Only slots with status "available" match, so a booked appointment can never be deleted here.
+    const slot = await Appointment.findOneAndDelete({
+      _id: req.params.id,
+      counsellorId: req.user.id,
+      status: "available",
+      studentId: null
+    });
     if (!slot) {
       return res.status(404).json({ message: "Available slot not found." });
     }

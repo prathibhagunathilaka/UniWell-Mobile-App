@@ -105,11 +105,8 @@ const updateResource = async (req, res) => {
 
 const deleteResource = async (req, res) => {
   try {
-    const resource = await Resource.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user.id },
-      { $set: { isActive: false } },
-      { new: true }
-    );
+    // Permanently removes the document from MongoDB (was a soft delete that only set isActive: false).
+    const resource = await Resource.findOneAndDelete({ _id: req.params.id, createdBy: req.user.id });
     if (!resource) {
       return res.status(404).json({ message: "Resource not found." });
     }
