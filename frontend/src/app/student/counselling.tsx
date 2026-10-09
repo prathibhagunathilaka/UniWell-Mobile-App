@@ -35,14 +35,18 @@ export default function CounsellingDirectoryScreen() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = counsellors.filter((c) => !q || `${c.name} ${c.specialization} ${c.qualification}`.toLowerCase().includes(q));
-    return soonestFirst
-      ? [...filtered].sort((a, b) => new Date(a.nextAvailableAt || '9999').getTime() - new Date(b.nextAvailableAt || '9999').getTime())
-      : filtered;
+    return soonestFirst ? [...filtered].sort((a, b) => {
+      const aTime = a.nextAvailableAt ? new Date(a.nextAvailableAt).getTime() : Number.POSITIVE_INFINITY;
+      const bTime = b.nextAvailableAt ? new Date(b.nextAvailableAt).getTime() : Number.POSITIVE_INFINITY;
+      return (Number.isFinite(aTime) ? aTime : Number.POSITIVE_INFINITY) -
+        (Number.isFinite(bTime) ? bTime : Number.POSITIVE_INFINITY);
+    }) : filtered;
   }, [counsellors, query, soonestFirst]);
 
   const nextLabel = (iso?: string | null) => {
     if (!iso) return '';
     const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return '';
     const today = new Date();
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     const day = d.toDateString() === today.toDateString() ? 'Today' : d.toDateString() === tomorrow.toDateString() ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -114,7 +118,11 @@ export default function CounsellingDirectoryScreen() {
                 </View>
                 <View style={styles.chipRow}>
                   <View style={styles.chip}><Text style={styles.chipText}>{counsellor.yearsOfExperience} yrs experience</Text></View>
-                  {counsellor.nextAvailableAt ? <View style={[styles.chip, styles.chipNext]}><Text style={[styles.chipText, styles.next]}>{nextLabel(counsellor.nextAvailableAt)}</Text></View> : null}
+                  {counsellor.nextAvailableAt && nextLabel(counsellor.nextAvailableAt) ? (
+                    <View style={[styles.chip, styles.chipNext]}>
+                      <Text style={[styles.chipText, styles.next]}>{nextLabel(counsellor.nextAvailableAt)}</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <View style={styles.cta}><Text style={styles.ctaText}>View profile & book</Text><Text style={styles.ctaArrow}>›</Text></View>
               </Pressable>
