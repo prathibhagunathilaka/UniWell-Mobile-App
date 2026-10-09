@@ -49,6 +49,16 @@ export default function StudentAppointmentsScreen() {
 
   const appointmentCard = (appointment: AppointmentRecord, isPast: boolean) => {
     const tone = AppointmentStatusTones[appointment.status];
+    const startsAt = new Date(appointment.startsAt);
+    const dateLabel = Number.isFinite(startsAt.getTime())
+      ? startsAt.toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+      : 'Date unavailable';
     return (
       <Link
         key={appointment._id}
@@ -72,13 +82,7 @@ export default function StudentAppointmentsScreen() {
               <Text style={[styles.statusText, { color: tone.text }]}>{tone.label}</Text>
             </View>
           </View>
-          <Text style={styles.date}>{new Date(appointment.startsAt).toLocaleString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}</Text>
+          <Text style={styles.date}>{dateLabel}</Text>
           <Text style={styles.meta}>{appointment.sessionType.replace('-', ' ')} · {appointment.durationMinutes} minutes</Text>
           <Text style={styles.details}>View details  ›</Text>
         </Pressable>
