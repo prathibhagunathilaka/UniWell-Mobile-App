@@ -72,6 +72,9 @@ export default function CheckInResultScreen() {
   const hasScore = Number.isFinite(parsedScore) && parsedScore >= 1 && parsedScore <= 5;
   const scorePercent: DimensionValue = hasScore ? `${(parsedScore / 5) * 100}%` : '0%';
   const hasResult = Boolean(checkIn || hasLegacyResult);
+  const recordedAt = checkIn && Number.isFinite(new Date(checkIn.createdAt).getTime())
+    ? new Date(checkIn.createdAt).toLocaleString()
+    : '';
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
@@ -109,6 +112,7 @@ export default function CheckInResultScreen() {
               <View style={[styles.scoreProgress, { width: scorePercent }]} />
             </View>
             <Text style={styles.reflection}>{reflections[wellbeingLevel] || 'Your check-in is a snapshot of today, not a definition of you.'}</Text>
+            {recordedAt ? <Text style={styles.recordedAt}>Recorded {recordedAt}</Text> : null}
           </SurfaceCard>
 
           <View style={styles.section}>
@@ -248,6 +252,10 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     fontSize: 14,
     lineHeight: 22,
+  },
+  recordedAt: {
+    color: Colors.muted,
+    fontSize: 12,
   },
   section: {
     gap: Space.md,
