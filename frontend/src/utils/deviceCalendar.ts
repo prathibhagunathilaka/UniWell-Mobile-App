@@ -1,3 +1,5 @@
+// Expo SDK 57 moved createEventInCalendarAsync to the legacy calendar API.
+// Importing it from "expo-calendar" throws a deprecation error, so we import from "expo-calendar/legacy".
 import * as Calendar from "expo-calendar/legacy";
 import { Linking, Platform } from "react-native";
 
