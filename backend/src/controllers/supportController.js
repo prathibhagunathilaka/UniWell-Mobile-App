@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
+const supportDirectory = require("../utils/supportDirectory");
 
 const MAX_TRUSTED_PEOPLE = 5;
 
@@ -8,7 +9,8 @@ const getSupportContacts = (req, res) => {
     universityPhone: process.env.UNIVERSITY_SUPPORT_PHONE || "",
     universityWebsite: process.env.UNIVERSITY_SUPPORT_URL || "",
     emergencyPhone: process.env.EMERGENCY_SUPPORT_PHONE || "",
-    emergencyWebsite: process.env.EMERGENCY_SUPPORT_URL || ""
+    emergencyWebsite: process.env.EMERGENCY_SUPPORT_URL || "",
+    directory: supportDirectory
   });
 };
 

@@ -63,9 +63,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await clearSession();
+    // Mark the auth flow as started BEFORE clearing the session. Otherwise, for a moment the user
+    // is null on /auth/login with authFlowStarted still false, and AuthRouteGuard bounces them
+    // back to the Get Started screen instead of the login page.
     setAuthFlowStarted(true);
     router.replace('/auth/login');
+    await clearSession();
   }, [clearSession]);
 
   const beginAuthFlow = useCallback(() => {

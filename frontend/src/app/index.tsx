@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { UniWellLogo } from '@/components/brand/UniWellLogo';
 import { InlineMessage, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
@@ -30,24 +31,35 @@ export default function IndexRoute() {
 
   return (
     <View style={styles.page}>
-      <View style={styles.content}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}><Text style={styles.brandLetter}>U</Text></View>
-          <Text style={styles.brandName}>UniWell</Text>
+      <View style={styles.inner}>
+        <View style={styles.header}>
+          <UniWellLogo size={44} showName />
         </View>
-        <WellbeingIllustration label="A calm, welcoming illustration for university wellbeing" />
-        <Text style={styles.eyebrow}>A little space for you</Text>
-        <Text style={styles.title}>Your Wellbeing Matters</Text>
-        <Text style={styles.subtitle}>
-          Take a moment to check in, find support, and access wellbeing resources designed for university life.
-        </Text>
-        {sessionNotice ? <InlineMessage tone="error">{sessionNotice}</InlineMessage> : null}
-        <Pressable accessibilityRole="button" onPress={beginAuthFlow} style={styles.primaryButton}>
-          <Text style={styles.primaryText}>GET STARTED</Text>
-        </Pressable>
-        <View style={styles.privacyCard}>
-          <Text style={styles.privacyTitle}>A supportive space, on your terms</Text>
-          <Text style={styles.privacyText}>Your check-ins are private to your account and are here to help you reflect.</Text>
+
+        <View style={styles.hero}>
+          <WellbeingIllustration label="A calm, welcoming illustration for university wellbeing" />
+          <View style={styles.copy}>
+            <Text style={styles.eyebrow}>A little space for you</Text>
+            <Text style={styles.title}>Your Wellbeing Matters</Text>
+            <Text style={styles.subtitle}>
+              Take a moment to check in, find support, and access wellbeing resources designed for university life.
+            </Text>
+          </View>
+          {sessionNotice ? <InlineMessage tone="error">{sessionNotice}</InlineMessage> : null}
+        </View>
+
+        <View style={styles.footer}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={beginAuthFlow}
+            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.primaryText}>GET STARTED</Text>
+          </Pressable>
+          <View style={styles.privacyCard}>
+            <Text style={styles.privacyTitle}>A supportive space, on your terms</Text>
+            <Text style={styles.privacyText}>Your check-ins are private to your account and are here to help you reflect.</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -58,38 +70,36 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingHorizontal: Space.md,
-    paddingVertical: Space.lg,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  content: {
+  // Header pinned top, hero in the middle, actions pinned bottom: space-between spreads them out.
+  inner: {
+    flex: 1,
     width: '100%',
     maxWidth: 520,
-    gap: Space.md,
+    paddingHorizontal: Space.md,
+    paddingTop: Space.sm,
+    paddingBottom: Space.lg,
+    justifyContent: 'space-between',
   },
-  brandRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: Space.sm,
+  },
+  hero: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: Space.lg,
+  },
+  copy: {
     gap: Space.sm,
   },
-  brandMark: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
+  footer: {
+    gap: Space.md,
   },
-  brandLetter: {
-    color: Colors.accent,
-    fontSize: 19,
-    fontWeight: '800',
-  },
-  brandName: {
-    color: Colors.accent,
-    fontSize: 18,
-    fontWeight: '800',
+  pressed: {
+    opacity: 0.85,
   },
   eyebrow: {
     color: Colors.primary,

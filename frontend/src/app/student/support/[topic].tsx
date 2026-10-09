@@ -57,13 +57,24 @@ export default function SupportDetailsScreen() {
 
   const phone = isImmediate ? contacts?.emergencyPhone : contacts?.universityPhone;
   const website = isImmediate ? contacts?.emergencyWebsite : contacts?.universityWebsite;
+  const section = selected ? contacts?.directory?.[topic as SupportTopic] : undefined;
+  const hasConfigured = Boolean(phone || website);
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
       <ScreenBackButton fallback="/student/emergency" label="Support & Safety" />
       <PageHeading title={selected?.title || 'Support information'} subtitle={selected?.description || 'This support page is not available.'} />
 
-      {selected && (isImmediate || topic === 'university') ? (
+      {isImmediate ? (
+        <SurfaceCard style={styles.guidanceCard}>
+          <Text style={styles.guidanceTitle}>If you may be in immediate danger</Text>
+          <Text style={styles.guidanceText}>{section?.intro || 'Contact emergency services where you are or go to the nearest emergency department. If possible, tell a trusted person what is happening and ask them to stay with you.'}</Text>
+        </SurfaceCard>
+      ) : section?.intro ? (
+        <SurfaceCard style={styles.introCard}><Text style={styles.guidanceText}>{section.intro}</Text></SurfaceCard>
+      ) : null}
+
+      {selected && hasConfigured ? (
         <SurfaceCard style={styles.contactCard}>
           {phone ? (
             <Pressable
@@ -71,7 +82,7 @@ export default function SupportDetailsScreen() {
               onPress={() => void openConfiguredLink(`tel:${phone.replace(/[^\d+]/g, '')}`)}
               style={styles.contactButton}
             >
-              <Text style={styles.contactButtonText}>{isImmediate ? 'Call configured emergency contact' : 'Call university support'}</Text>
+              <Text style={styles.contactButtonText}>{isImmediate ? 'Call emergency contact' : 'Call university support'}</Text>
             </Pressable>
           ) : null}
           {website ? (
@@ -80,21 +91,67 @@ export default function SupportDetailsScreen() {
               onPress={() => void openConfiguredLink(website)}
             />
           ) : null}
-          {!phone && !website ? (
-            <Text style={styles.notConfigured}>
-              {contactsError || 'Contact information is not configured yet.'}
-            </Text>
-          ) : null}
-          {linkError ? <InlineMessage tone="error">{linkError}</InlineMessage> : null}
         </SurfaceCard>
       ) : null}
 
-      {isImmediate ? (
-        <SurfaceCard style={styles.guidanceCard}>
-          <Text style={styles.guidanceTitle}>If you may be in immediate danger</Text>
-          <Text style={styles.guidanceText}>Contact emergency services where you are or go to the nearest emergency department. If possible, tell a trusted person what is happening and ask them to stay with you.</Text>
+      {section?.steps?.length ? (
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>{isImmediate ? 'What to do right now' : 'Steps you can take'}</Text>
+          {section.steps.map((step, index) => (
+            <View key={step.title} style={styles.stepCard}>
+              <View style={styles.stepNumber}><Text style={styles.stepNumberText}>{index + 1}</Text></View>
+              <View style={styles.stepCopy}>
+                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepText}>{step.text}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {section?.contacts?.length ? (
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>{isImmediate ? 'Who to contact' : topic === 'university' ? 'Support on campus' : 'More help'}</Text>
+          {section.contacts.map((entry) => (
+            <View key={entry.name} style={[styles.entryCard, isImmediate && styles.entryCardUrgent]}>
+              <Text style={styles.entryName}>{entry.name}</Text>
+              <Text style={styles.entryText}>{entry.description}</Text>
+              {entry.availability ? <Text style={styles.entryMeta}>{entry.availability}</Text> : null}
+              {entry.phone || entry.website ? (
+                <View style={styles.entryActions}>
+                  {entry.phone ? (
+                    <Pressable
+                      accessibilityRole="link"
+                      accessibilityLabel={`Call ${entry.name} on ${entry.phone}`}
+                      onPress={() => void openConfiguredLink(`tel:${entry.phone.replace(/[^\d+]/g, '')}`)}
+                      style={({ pressed }) => [styles.callButton, pressed && styles.pressed]}
+                    >
+                      <Text style={styles.callText}>Call {entry.phone}</Text>
+                    </Pressable>
+                  ) : null}
+                  {entry.website ? (
+                    <Pressable
+                      accessibilityRole="link"
+                      accessibilityLabel={`Open ${entry.name} website`}
+                      onPress={() => void openConfiguredLink(entry.website)}
+                      style={({ pressed }) => [styles.webButton, pressed && styles.pressed]}
+                    >
+                      <Text style={styles.webText}>Website</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {selected && !section && !hasConfigured ? (
+        <SurfaceCard style={styles.contactCard}>
+          <Text style={styles.notConfigured}>{contactsError || 'Contact information is not available yet.'}</Text>
         </SurfaceCard>
       ) : null}
+      {linkError ? <InlineMessage tone="error">{linkError}</InlineMessage> : null}
       <View style={styles.bottomSpace} />
     </WellbeingPage>
   );
@@ -157,6 +214,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  introCard: { backgroundColor: Colors.white },
+  group: { gap: Space.sm },
+  groupTitle: { color: Colors.accent, fontSize: 17, fontWeight: '800' },
+  stepCard: { flexDirection: 'row', gap: Space.md, padding: Space.md, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.white },
+  stepNumber: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.paleCoral },
+  stepNumberText: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  stepCopy: { flex: 1, gap: 3 },
+  stepTitle: { color: Colors.accent, fontSize: 15, fontWeight: '800' },
+  stepText: { color: Colors.muted, fontSize: 14, lineHeight: 21 },
+  entryCard: { gap: Space.xs, padding: Space.md, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, borderTopWidth: 4, borderTopColor: Colors.secondary, backgroundColor: Colors.white },
+  entryCardUrgent: { borderTopColor: Colors.primary },
+  entryName: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  entryText: { color: Colors.muted, fontSize: 14, lineHeight: 21 },
+  entryMeta: { color: Colors.success, fontSize: 12, fontWeight: '800' },
+  entryActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, marginTop: Space.xs },
+  callButton: { minHeight: 44, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.primary },
+  callText: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  webButton: { minHeight: 44, paddingHorizontal: Space.md, justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: Colors.paleBlue },
+  webText: { color: Colors.accent, fontSize: 14, fontWeight: '800' },
+  pressed: { opacity: 0.8 },
   bottomSpace: {
     height: Space.xl,
   },

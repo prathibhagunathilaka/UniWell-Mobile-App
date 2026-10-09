@@ -196,11 +196,33 @@ export type TrustedPerson = {
   relationship: string;
 };
 
+export type SupportContactEntry = {
+  name: string;
+  description: string;
+  phone: string;
+  website: string;
+  availability: string;
+};
+
+export type SupportStep = { title: string; text: string };
+
+export type SupportSection = {
+  intro: string;
+  steps?: SupportStep[];
+  contacts: SupportContactEntry[];
+};
+
 export type SupportContacts = {
   universityPhone: string;
   universityWebsite: string;
   emergencyPhone: string;
   emergencyWebsite: string;
+  // Seeded by the backend (src/utils/supportDirectory.js). Optional so older backends still work.
+  directory?: {
+    immediate?: SupportSection;
+    university?: SupportSection;
+    safety?: SupportSection;
+  };
 };
 
 export const getSupportContacts = () =>

@@ -1,4 +1,6 @@
-import * as Calendar from 'expo-calendar';
+// The old "open the calendar's new-event screen" API now lives in expo-calendar/legacy.
+// Importing it from there avoids the deprecation warning / runtime error from the main entry.
+import * as LegacyCalendar from 'expo-calendar/legacy';
 import { Linking, Platform } from 'react-native';
 
 import type { AppointmentRecord } from '@/services/counsellingService';
@@ -74,16 +76,29 @@ const openGoogleCalendarTemplate = async (d: EventDetails) => {
 
 /**
  * Opens the phone's own calendar "new event" screen with everything filled in.
- * The counsellor picks whichever account/calendar they like (Google, iCloud, Outlook...)
- * and taps Save. No calendar permission is needed because the OS UI does the saving.
+ * The user picks whichever account/calendar they like (Google, Samsung, Outlook...) and taps Save.
+ * No calendar permission is needed because the OS UI does the saving.
+ *
+ * If the phone has no calendar app that can handle the request (or the native screen fails for any
+ * reason), fall back to Google Calendar's web "add event" page, so the button never silently does nothing.
  */
 const openInCalendar = async (details: EventDetails): Promise<AddToCalendarResult> => {
   if (Platform.OS === 'web') {
     await openGoogleCalendarTemplate(details);
     return 'opened-web';
   }
-  const result = await Calendar.createEventInCalendarAsync(details);
-  return result.action === 'canceled' ? 'cancelled' : 'saved';
+  try {
+    const result = await LegacyCalendar.createEventInCalendarAsync(details);
+    return result.action === 'canceled' ? 'cancelled' : 'saved';
+  } catch (nativeError) {
+    console.warn('[CALENDAR] native new-event screen failed, falling back to Google Calendar:', nativeError);
+    try {
+      await openGoogleCalendarTemplate(details);
+      return 'opened-web';
+    } catch {
+      throw new Error('No calendar app could be opened on this phone. Install Google Calendar or your phone\'s calendar app and try again.');
+    }
+  }
 };
 
 export const addAppointmentToDeviceCalendar = (a: AppointmentRecord) => openInCalendar(buildEventDetails(a));
