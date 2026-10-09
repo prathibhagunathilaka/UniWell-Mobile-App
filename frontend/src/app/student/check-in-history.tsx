@@ -48,14 +48,7 @@ export default function CheckInHistoryScreen() {
           key={checkIn._id}
           href={{
             pathname: '/student/check-in-result',
-            params: {
-              mood: checkIn.mood,
-              stressLevel: checkIn.stressLevel,
-              sleepQuality: checkIn.sleepQuality,
-              studyCoping: checkIn.studyCoping,
-              wellbeingLevel: checkIn.wellbeingLevel,
-              wellbeingScore: String(checkIn.wellbeingScore),
-            },
+            params: { id: checkIn._id },
           }}
           asChild
         >
