@@ -74,6 +74,16 @@ export default function CounsellingDirectoryScreen() {
             placeholderTextColor={Colors.muted}
             style={styles.search}
           />
+          {query ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear counsellor search"
+              onPress={() => setQuery('')}
+              style={styles.clearSearch}
+            >
+              <Text style={styles.clearSearchText}>Clear search</Text>
+            </Pressable>
+          ) : null}
           <Pressable accessibilityRole="switch" accessibilityState={{ checked: soonestFirst }} onPress={() => setSoonestFirst((v) => !v)} style={[styles.sortChip, soonestFirst && styles.sortChipOn]}>
             <Text style={[styles.sortText, soonestFirst && styles.sortTextOn]}>{soonestFirst ? '✓ Soonest available first' : 'Sort by soonest available'}</Text>
           </Pressable>
@@ -154,6 +164,8 @@ const styles = StyleSheet.create({
   emptyText: { color: Colors.muted, fontSize: 14, lineHeight: 21 },
   tools: { gap: Space.sm },
   search: { minHeight: 48, paddingHorizontal: Space.md, borderRadius: Radius.md, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, color: Colors.accent, fontSize: 15 },
+  clearSearch: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: Space.xs },
+  clearSearchText: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
   sortChip: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: Space.md, borderRadius: Radius.pill, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
   sortChipOn: { backgroundColor: Colors.paleCoral, borderColor: Colors.primary },
   sortText: { color: Colors.accent, fontSize: 13, fontWeight: '700' },
