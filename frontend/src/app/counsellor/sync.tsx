@@ -1,3 +1,6 @@
+  // NOTE: feedUrl is built by the backend from the API host (calendarController.js).
+  // On a local network it is a private IP, which WhatsApp does not show as a clickable link.
+  // Deploy the backend to a public HTTPS domain (or use a tunnel) to share it.
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
