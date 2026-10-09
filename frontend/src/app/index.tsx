@@ -1,65 +1,46 @@
-// Keep these imports first: they install the app-wide text scaling, dark-mode and translation wrappers
-// before any screen renders.
-import { FontScaleProvider } from '@/contexts/FontScaleContext';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import { AppThemeProvider, DARK_COLORS, useAppTheme } from '@/contexts/ThemeContext';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { Link } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { AuthRouteGuard } from '@/components/auth/AuthRouteGuard';
-import { AppTopBar } from '@/components/navigation/AppTopBar';
-import { RoleBottomNav } from '@/components/navigation/RoleBottomNav';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { UniWellLogo } from '@/components/brand/UniWellLogo';
+import { PrimaryButton, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
+import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
+import { useAuth } from '@/contexts/AuthContext';
 
-const UniWellDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: DARK_COLORS.background,
-    card: DARK_COLORS.surface,
-    border: DARK_COLORS.border,
-    text: DARK_COLORS.text,
+// Get Started (welcome) screen — the first screen signed-out users see.
+export default function GetStartedScreen() {
+  const { beginAuthFlow } = useAuth();
+
+  return (
+    <ScrollView contentContainerStyle={styles.page}>
+      <View style={styles.content}>
+        <UniWellLogo size={44} showName />
+        <WellbeingIllustration label="A calm moment for student wellbeing" />
+        <Text style={styles.title}>Your wellbeing, supported.</Text>
+        <Text style={styles.subtitle}>
+          Check in, book counselling and find support that fits student life — all in one place.
+        </Text>
+        <PrimaryButton title="Get Started" onPress={beginAuthFlow} />
+        <Link href="/auth/register" asChild>
+          <Pressable accessibilityRole="link">
+            <Text style={styles.link}>New here? Create an account</Text>
+          </Pressable>
+        </Link>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    backgroundColor: Colors.background,
   },
-};
-
-function ThemedApp() {
-  const { isDark } = useAppTheme();
-
-  return (
-    <ThemeProvider value={isDark ? UniWellDarkTheme : DefaultTheme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <AuthProvider>
-        <AuthRouteGuard>
-          <View style={{ flex: 1, backgroundColor: isDark ? DARK_COLORS.background : undefined }}>
-            <AppTopBar />
-            <View style={{ flex: 1 }}>
-              <Stack
-                initialRouteName="index"
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: isDark ? DARK_COLORS.background : undefined },
-                }}
-              >
-                <Stack.Screen name="index" />
-              </Stack>
-            </View>
-            <RoleBottomNav />
-          </View>
-        </AuthRouteGuard>
-      </AuthProvider>
-    </ThemeProvider>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <FontScaleProvider>
-      <AppThemeProvider>
-        <LanguageProvider>
-          <ThemedApp />
-        </LanguageProvider>
-      </AppThemeProvider>
-    </FontScaleProvider>
-  );
-}
+  content: { width: '100%', maxWidth: 520, gap: 18 },
+  title: { color: Colors.accent, fontSize: 32, lineHeight: 40, fontWeight: '800' },
+  subtitle: { color: Colors.muted, fontSize: 16, lineHeight: 24 },
+  link: { color: Colors.accent, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingVertical: 6 },
+});
