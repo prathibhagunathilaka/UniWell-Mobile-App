@@ -1,9 +1,12 @@
 import { Link, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { DimensionValue, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import {
   Eyebrow,
+  InlineMessage,
+  LoadingState,
   PageHeading,
   PrimaryButton,
   SectionHeading,
@@ -12,6 +15,7 @@ import {
   WellbeingPage,
 } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
+import { CheckInRecord, getCheckInById } from '@/services/checkinService';
 
 const reflections: Record<string, string> = {
   'Needs Support': 'It sounds like today may feel especially heavy. Consider reaching out to someone you trust or exploring support when you feel ready.',
@@ -22,6 +26,7 @@ const reflections: Record<string, string> = {
 
 export default function CheckInResultScreen() {
   const params = useLocalSearchParams<{
+    id?: string;
     mood?: string;
     stressLevel?: string;
     sleepQuality?: string;
@@ -30,23 +35,66 @@ export default function CheckInResultScreen() {
     wellbeingScore?: string;
   }>();
 
-  const wellbeingLevel = String(params.wellbeingLevel || 'Moderate');
-  const mood = String(params.mood || '—');
-  const stressLevel = String(params.stressLevel || '—');
-  const sleepQuality = String(params.sleepQuality || '—');
-  const studyCoping = String(params.studyCoping || '—');
-  const parsedScore = Number(params.wellbeingScore);
+  const routeId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [checkIn, setCheckIn] = useState<CheckInRecord | null>(null);
+  const [loading, setLoading] = useState(Boolean(routeId));
+  const [error, setError] = useState('');
+
+  const loadCheckIn = useCallback(async () => {
+    if (!routeId) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await getCheckInById(routeId);
+      setCheckIn(response.checkIn);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load this check-in.');
+    } finally {
+      setLoading(false);
+    }
+  }, [routeId]);
+
+  useEffect(() => {
+    if (routeId) void Promise.resolve().then(loadCheckIn);
+  }, [loadCheckIn, routeId]);
+
+  const paramValue = (value?: string | string[]) =>
+    Array.isArray(value) ? value[0] || '' : value || '';
+  const hasLegacyResult = !routeId && Boolean(
+    params.mood || params.stressLevel || params.sleepQuality || params.studyCoping || params.wellbeingScore,
+  );
+  const wellbeingLevel = checkIn?.wellbeingLevel || paramValue(params.wellbeingLevel) || '—';
+  const mood = checkIn?.mood || paramValue(params.mood) || '—';
+  const stressLevel = checkIn?.stressLevel || paramValue(params.stressLevel) || '—';
+  const sleepQuality = checkIn?.sleepQuality || paramValue(params.sleepQuality) || '—';
+  const studyCoping = checkIn?.studyCoping || paramValue(params.studyCoping) || '—';
+  const parsedScore = checkIn?.wellbeingScore ?? Number(paramValue(params.wellbeingScore));
   const hasScore = Number.isFinite(parsedScore) && parsedScore >= 1 && parsedScore <= 5;
   const scorePercent: DimensionValue = hasScore ? `${(parsedScore / 5) * 100}%` : '0%';
+  const hasResult = Boolean(checkIn || hasLegacyResult);
 
   return (
     <WellbeingPage contentContainerStyle={styles.page}>
       <ScreenBackButton fallback="/student/dashboard" label="Dashboard" />
       <Eyebrow>Your reflection</Eyebrow>
       <PageHeading title="Your Check-in Result" subtitle="Thank you for taking a moment to notice how you are doing." />
-      <WellbeingIllustration label="A hopeful illustration celebrating your wellbeing reflection" />
+      {loading ? <LoadingState label="Loading your saved check-in..." /> : null}
+      {error ? (
+        <View style={styles.state}>
+          <InlineMessage tone="error">{error}</InlineMessage>
+          <Pressable accessibilityRole="button" onPress={() => void loadCheckIn()}>
+            <Text style={styles.retry}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {!loading && !error && !hasResult ? (
+        <InlineMessage tone="error">This check-in result is unavailable. Open a saved check-in from your history.</InlineMessage>
+      ) : null}
+      {hasResult && !loading ? (
+        <>
+          <WellbeingIllustration label="A hopeful illustration celebrating your wellbeing reflection" />
 
-      <SurfaceCard style={styles.scoreCard}>
+          <SurfaceCard style={styles.scoreCard}>
         <View style={styles.scoreTop}>
           <View style={styles.scoreCopy}>
             <Text style={styles.scoreCaption}>YOUR WELLBEING TODAY</Text>
@@ -61,9 +109,9 @@ export default function CheckInResultScreen() {
           <View style={[styles.scoreProgress, { width: scorePercent }]} />
         </View>
         <Text style={styles.reflection}>{reflections[wellbeingLevel] || 'Your check-in is a snapshot of today, not a definition of you.'}</Text>
-      </SurfaceCard>
+          </SurfaceCard>
 
-      <View style={styles.section}>
+          <View style={styles.section}>
         <SectionHeading title="Your responses" detail="A snapshot of what you shared today." />
         <SurfaceCard style={styles.summaryCard}>
           <SummaryRow icon="☀" label="Mood" value={mood} />
@@ -71,9 +119,15 @@ export default function CheckInResultScreen() {
           <SummaryRow icon="☾" label="Sleep" value={sleepQuality} />
           <SummaryRow icon="▤" label="Study & coping" value={studyCoping} />
         </SurfaceCard>
-      </View>
+          </View>
+          {checkIn?.note.trim() ? (
+            <SurfaceCard style={styles.noteCard}>
+              <Text style={styles.noteTitle}>Your note</Text>
+              <Text style={styles.noteText}>{checkIn.note}</Text>
+            </SurfaceCard>
+          ) : null}
 
-      <View style={styles.section}>
+          <View style={styles.section}>
         <SectionHeading title="A gentle next step" detail="Choose one small thing that feels helpful." />
         <Link href="/student/resources" asChild>
           <PrimaryButton title="Explore Self-help Resources" />
@@ -85,13 +139,15 @@ export default function CheckInResultScreen() {
             <Text style={styles.counsellingText}>Your university can guide you toward support when you are ready.</Text>
           </View>
         </SurfaceCard>
-      </View>
+          </View>
 
-      <Link href="/student" asChild>
-        <Pressable accessibilityRole="button" style={styles.homeButton}>
-          <Text style={styles.homeButtonText}>Back to wellbeing home</Text>
-        </Pressable>
-      </Link>
+          <Link href="/student" asChild>
+            <Pressable accessibilityRole="button" style={styles.homeButton}>
+              <Text style={styles.homeButtonText}>Back to wellbeing home</Text>
+            </Pressable>
+          </Link>
+        </>
+      ) : null}
     </WellbeingPage>
   );
 }
@@ -111,6 +167,27 @@ function SummaryRow({ icon, label, value }: { icon: string; label: string; value
 const styles = StyleSheet.create({
   page: {
     gap: Space.lg,
+  },
+  state: {
+    gap: Space.sm,
+  },
+  retry: {
+    color: Colors.primary,
+    fontWeight: '800',
+  },
+  noteCard: {
+    gap: Space.xs,
+    backgroundColor: Colors.paleCoral,
+  },
+  noteTitle: {
+    color: Colors.accent,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  noteText: {
+    color: Colors.accent,
+    fontSize: 14,
+    lineHeight: 21,
   },
   scoreCard: {
     padding: Space.lg,
