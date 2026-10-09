@@ -21,6 +21,18 @@ import {
 
 type ProfileAction = 'update' | 'delete';
 
+const validateProfile = (name: string, phoneNumber: string, faculty: string, year: string) => {
+  if (name.trim().length < 2) return 'Enter a name with at least 2 characters.';
+  if (!/^\+?[0-9().\-\s]{5,25}$/.test(phoneNumber.trim()) || (phoneNumber.match(/\d/g) || []).length < 5) {
+    return 'Enter a valid phone number with at least 5 digits.';
+  }
+  if (!faculty.trim()) return 'Enter your faculty or school.';
+  if (!Number.isInteger(Number(year)) || Number(year) < 1 || Number(year) > 12) {
+    return 'Enter a year of study between 1 and 12.';
+  }
+  return '';
+};
+
 export default function StudentProfileScreen() {
   const { user, logout, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
@@ -38,6 +50,13 @@ export default function StudentProfileScreen() {
   const requestVerification = async (action: ProfileAction) => {
     setError('');
     setMessage('');
+    if (action === 'update') {
+      const validationError = validateProfile(name, phoneNumber, faculty, year);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
     setLoading(true);
     try {
       const response = await requestProfileOtp(action);
@@ -57,17 +76,11 @@ export default function StudentProfileScreen() {
       setError('Enter the 6-digit code sent to your registered email.');
       return;
     }
-    if (
-      pendingAction === 'update' &&
-      (name.trim().length < 2 ||
-        !/^\+?[0-9().\-\s]{5,25}$/.test(phoneNumber.trim()) ||
-        (phoneNumber.match(/\d/g) || []).length < 5 ||
-        !faculty.trim() ||
-        !Number.isInteger(Number(year)) ||
-        Number(year) < 1 ||
-        Number(year) > 12)
-    ) {
-      setError('Check your name, phone number, faculty, and year before verifying this update.');
+    const validationError = pendingAction === 'update'
+      ? validateProfile(name, phoneNumber, faculty, year)
+      : '';
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
