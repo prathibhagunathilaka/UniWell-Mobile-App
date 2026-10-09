@@ -17,6 +17,11 @@ const {
   deleteStudentAccount
 } = require("../controllers/profileController");
 const {
+  getPreferences,
+  updatePreferences,
+  logoutAllDevices
+} = require("../controllers/preferencesController");
+const {
   requestRegistrationOtp,
   verifyRegistrationOtp
 } = require("../controllers/registrationOtpController");
@@ -102,6 +107,9 @@ router.post("/register/verify-otp", registrationOtpVerifyLimiter, verifyRegistra
 router.post("/login", loginIpLimiter, loginAccountLimiter, loginUser);
 router.post("/admin/login", loginIpLimiter, loginAccountLimiter, loginAdmin);
 router.get("/me", protect, getCurrentUser);
+router.get("/preferences", protect, getPreferences);
+router.patch("/preferences", protect, updatePreferences);
+router.post("/logout-all", protect, logoutAllDevices);
 router.post("/profile/request-otp", profileOtpRequestLimiter, protect, authorize("student"), requestProfileOtp);
 router.post("/profile/verify-otp", profileOtpVerifyLimiter, protect, authorize("student"), verifyProfileOtp);
 router.patch("/profile", profileActionLimiter, protect, authorize("student"), updateStudentProfile);

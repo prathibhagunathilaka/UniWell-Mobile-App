@@ -114,3 +114,21 @@ export const setCounsellorStatus = (id: string, status: 'active' | 'suspended') 
 
 export const removeCounsellor = (id: string) =>
   apiFetch<{ message: string; releasedBookings: number }>(`/admin/counsellors/${id}`, { method: 'DELETE' });
+
+export type AdminProfile = {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  phoneNumber: string;
+  role: 'admin';
+  status: string;
+};
+
+export const getAdminProfile = () => apiFetch<{ admin: AdminProfile }>('/admin/profile');
+
+export const updateAdminProfile = (changes: { name?: string; phoneNumber?: string }) =>
+  apiFetch<{ message: string; admin: AdminProfile }>('/admin/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(changes),
+  });

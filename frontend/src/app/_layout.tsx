@@ -1,22 +1,45 @@
+// Keep these two imports first: they install the app-wide text scaling and dark-mode wrappers
+// before any screen renders.
+import { FontScaleProvider } from '@/contexts/FontScaleContext';
+import { AppThemeProvider, DARK_COLORS, useAppTheme } from '@/contexts/ThemeContext';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
 
 import { AuthRouteGuard } from '@/components/auth/AuthRouteGuard';
 import { AppTopBar } from '@/components/navigation/AppTopBar';
 import { RoleBottomNav } from '@/components/navigation/RoleBottomNav';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+const UniWellDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: DARK_COLORS.background,
+    card: DARK_COLORS.surface,
+    border: DARK_COLORS.border,
+    text: DARK_COLORS.text,
+  },
+};
+
+function ThemedApp() {
+  const { isDark } = useAppTheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? UniWellDarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <AuthProvider>
         <AuthRouteGuard>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? DARK_COLORS.background : undefined }}>
             <AppTopBar />
             <View style={{ flex: 1 }}>
-              <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+              <Stack
+                initialRouteName="index"
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: isDark ? DARK_COLORS.background : undefined },
+                }}
+              >
                 <Stack.Screen name="index" />
               </Stack>
             </View>
@@ -25,5 +48,15 @@ export default function RootLayout() {
         </AuthRouteGuard>
       </AuthProvider>
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <FontScaleProvider>
+      <AppThemeProvider>
+        <ThemedApp />
+      </AppThemeProvider>
+    </FontScaleProvider>
   );
 }

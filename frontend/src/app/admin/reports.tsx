@@ -1,9 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Print from 'expo-print';
 import { router } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Dropdown } from '@/components/wellbeing/Dropdown';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
@@ -17,6 +15,7 @@ import {
   UsageReport,
 } from '@/services/adminService';
 import { saveAndShareTextFile } from '@/utils/shareFile';
+import { exportHtmlAsPdf } from '@/utils/sharePdf';
 import { buildUsageReportHtml } from '@/utils/usageReportPdf';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -135,26 +134,15 @@ export default function AdminReportsScreen() {
         sessionTypeLabel: sessionTypes.find((t) => t.key === sessionType)?.label ?? 'All types',
         counsellorLabel: counsellors.find((c) => c._id === counsellorId)?.name ?? 'All counsellors',
       });
-      if (Platform.OS === 'web') {
-        await Print.printAsync({ html });
-        setMessage('Choose “Save as PDF” in the print dialog.');
-        return;
-      }
-      let uri = '';
-      try {
-        uri = (await Print.printToFileAsync({ html, width: 595, height: 842 })).uri;
-      } catch {
-        await Print.printAsync({ html }); // fallback: system print dialog has "Save as PDF"
-        setMessage('Choose “Save as PDF” in the print dialog.');
-        return;
-      }
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Save or share the usage report' });
-        setMessage('PDF ready. It contains aggregate numbers only.');
-      } else {
-        await Print.printAsync({ uri });
-        setMessage('Choose “Save as PDF” in the print dialog.');
-      }
+      const result = await exportHtmlAsPdf(
+        html,
+        `uniwell-usage-report-${new Date().toISOString().slice(0, 10)}`,
+        { width: 595, height: 842 },
+        'Save or share the usage report',
+      );
+      setMessage(result === 'shared'
+        ? 'PDF ready. It contains aggregate numbers only.'
+        : 'Choose “Save as PDF” in the print dialog.');
     } catch (cause) {
       setError(cause instanceof Error && cause.message ? `Unable to create the PDF: ${cause.message}` : 'Unable to create the PDF.');
     } finally {

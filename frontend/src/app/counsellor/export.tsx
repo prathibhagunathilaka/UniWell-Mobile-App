@@ -1,5 +1,3 @@
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
@@ -9,6 +7,7 @@ import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as
 import { useAuth } from '@/contexts/AuthContext';
 import { AppointmentRecord, getCounsellorAppointments } from '@/services/counsellingService';
 import { buildAppointmentsHtml, DAY_MS, ExportFormat, MAX_RANGE_DAYS, pageSize } from '@/utils/appointmentPdf';
+import { exportHtmlAsPdf } from '@/utils/sharePdf';
 
 type Status = Exclude<AppointmentRecord['status'], 'cancelled'>;
 type Session = AppointmentRecord['sessionType'];
@@ -151,30 +150,15 @@ export default function CounsellorExportScreen() {
         filterSummary: filterSummary(),
         includeContacts,
       });
-      if (Platform.OS === 'web') {
-        await Print.printAsync({ html }); // browser print dialog -> "Save as PDF"
-        setMessage('Choose “Save as PDF” in the print dialog.');
-        return;
-      }
-
-      let uri = '';
-      try {
-        const result = await Print.printToFileAsync({ html, ...pageSize(format) });
-        uri = result.uri;
-      } catch {
-        // Fallback: the system print dialog also has "Save as PDF".
-        await Print.printAsync({ html });
-        setMessage('Choose “Save as PDF” in the print dialog.');
-        return;
-      }
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Save or share your appointments PDF' });
-        setMessage('PDF ready. If you closed the share sheet, tap Export again to reopen it.');
-      } else {
-        await Print.printAsync({ uri });
-        setMessage('Choose “Save as PDF” in the print dialog.');
-      }
+      const result = await exportHtmlAsPdf(
+        html,
+        `uniwell-appointments-${fmt(from)}-to-${fmt(to)}`,
+        pageSize(format),
+        'Save or share your appointments PDF',
+      );
+      setMessage(result === 'shared'
+        ? 'PDF ready. Pick “Save to Files / Drive” or any app to keep it.'
+        : 'Choose “Save as PDF” in the print dialog.');
     } catch (cause) {
       setError(cause instanceof Error && cause.message ? `Unable to create the PDF: ${cause.message}` : 'Unable to create the PDF. Please try again.');
     } finally {

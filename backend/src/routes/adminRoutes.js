@@ -1,5 +1,7 @@
 const express = require("express");
 const {
+  getAdminProfile,
+  updateAdminProfile,
   getPendingCounsellors,
   updateCounsellorApproval,
   listManagedCounsellors,
@@ -12,6 +14,8 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 const router = express.Router();
 router.use(protect, authorize("admin"));
 router.get("/overview", getOverview);
+router.get("/profile", getAdminProfile);
+router.patch("/profile", updateAdminProfile);
 router.get("/counsellors/pending", getPendingCounsellors);
 router.get("/counsellors", listCounsellorsForFilter);
 router.get("/counsellors/all", listManagedCounsellors);
