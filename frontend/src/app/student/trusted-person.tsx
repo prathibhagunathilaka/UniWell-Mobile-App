@@ -3,7 +3,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AuthButton, AuthField, AuthMessage } from '@/components/auth/AuthUI';
 import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
-import { PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
+import { LoadingState, PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
   addTrustedPerson,
@@ -50,14 +50,29 @@ export default function TrustedPersonScreen() {
   }, [load]);
 
   const save = async () => {
-    setSaving(true);
     setError('');
     setMessage('');
+    const cleanedName = name.trim();
+    const cleanedPhone = phoneNumber.trim();
+    const cleanedRelationship = relationship.trim();
+    if (!cleanedName || cleanedName.length > 100) {
+      setError('Enter a name of up to 100 characters.');
+      return;
+    }
+    if (!cleanedRelationship || cleanedRelationship.length > 60) {
+      setError('Enter a relationship of up to 60 characters.');
+      return;
+    }
+    if (cleanedPhone.length > 25 || cleanedPhone.replace(/\D/g, '').length < 5) {
+      setError('Enter a phone number with at least 5 digits and no more than 25 characters.');
+      return;
+    }
+    setSaving(true);
     try {
       const person: TrustedPerson = {
-        name: name.trim(),
-        phoneNumber: phoneNumber.trim(),
-        relationship: relationship.trim(),
+        name: cleanedName,
+        phoneNumber: cleanedPhone,
+        relationship: cleanedRelationship,
       };
       const response = editingId
         ? await updateTrustedPerson(editingId, person)
@@ -114,7 +129,7 @@ export default function TrustedPersonScreen() {
         title="Trusted people"
         subtitle={`Save up to ${MAX_PEOPLE} people you feel safe contacting. This information is private to your account.`}
       />
-      {loading ? null : (
+      {loading ? <LoadingState label="Loading your trusted people..." /> : (
         <>
           {people.map((person) => (
             <SurfaceCard key={person._id} style={styles.card}>
