@@ -6,12 +6,12 @@ import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SectionHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
-  cancelStudentAppointment,
   CounsellorProfile,
   CounsellorSlot,
   createAppointment,
   getCounsellor,
   getCounsellorAvailability,
+  rescheduleStudentAppointment,
 } from '@/services/counsellingService';
 
 const sessionTypes = [
@@ -31,9 +31,10 @@ export default function CounsellorProfileScreen() {
   const [booking, setBooking] = useState(false);
   const [shareCheckIn, setShareCheckIn] = useState(false);
   const [selectedDay, setSelectedDay] = useState('');
+  const [availabilityCheckedAt, setAvailabilityCheckedAt] = useState(0);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<string | undefined> => {
     if (!id) return;
     setLoading(true);
     setError('');
@@ -44,8 +45,13 @@ export default function CounsellorProfileScreen() {
       ]);
       setCounsellor(profileResponse.counsellor);
       setSlots(slotsResponse.slots);
+      setAvailabilityCheckedAt(Date.now());
+      setSelectedSlot((current) => slotsResponse.slots.some((slot) =>
+        slot._id === current && new Date(slot.startsAt).getTime() > Date.now()) ? current : '');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load this counsellor right now.');
+      const message = cause instanceof Error ? cause.message : 'Unable to load this counsellor right now.';
+      setError(message);
+      return message;
     } finally {
       setLoading(false);
     }
@@ -56,9 +62,13 @@ export default function CounsellorProfileScreen() {
   }, [load]);
 
   // NEW: group times by day so students pick a date first, then a time (calendar + time-slot layout).
+  const availableSlots = useMemo(() => slots.filter((slot) => {
+    const startsAt = new Date(slot.startsAt).getTime();
+    return Number.isFinite(startsAt) && startsAt > availabilityCheckedAt;
+  }), [availabilityCheckedAt, slots]);
   const days = useMemo(() => {
     const map = new Map<string, { key: string; weekday: string; dayNumber: string; long: string; slots: CounsellorSlot[] }>();
-    [...slots].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()).forEach((slot) => {
+    [...availableSlots].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()).forEach((slot) => {
       const d = new Date(slot.startsAt);
       const key = d.toDateString();
       if (!map.has(key)) {
@@ -73,30 +83,39 @@ export default function CounsellorProfileScreen() {
       map.get(key)!.slots.push(slot);
     });
     return [...map.values()];
-  }, [slots]);
+  }, [availableSlots]);
   const activeDay = days.find((d) => d.key === selectedDay)?.key || days[0]?.key || '';
-  const selectedSlotRecord = slots.find((s) => s._id === selectedSlot);
+  const selectedSlotRecord = availableSlots.find((s) => s._id === selectedSlot);
 
   const book = async () => {
-    if (!selectedSlot) {
+    if (!selectedSlotRecord) {
       setError('Choose an available time before booking.');
       return;
     }
     setBooking(true);
     setError('');
     try {
-      const response = await createAppointment(selectedSlot, sessionType, shareCheckIn);
-      // Rescheduling: the new time is secured first; only then is the old booking released.
-      if (rescheduleFrom) {
-        await cancelStudentAppointment(Array.isArray(rescheduleFrom) ? rescheduleFrom[0] : rescheduleFrom).catch(() => undefined);
-      }
+      const previousAppointmentId = Array.isArray(rescheduleFrom) ? rescheduleFrom[0] : rescheduleFrom;
+      const result = previousAppointmentId
+        ? await rescheduleStudentAppointment(selectedSlot, sessionType, shareCheckIn, previousAppointmentId)
+        : await createAppointment(selectedSlot, sessionType, shareCheckIn).then((response) => ({
+          appointment: response.appointment,
+          previousAppointmentError: undefined,
+        }));
       router.replace({
         pathname: '/student/appointments/[id]',
-        params: { id: response.appointment._id, confirmation: '1' },
+        params: {
+          id: result.appointment._id,
+          confirmation: '1',
+          ...(result.previousAppointmentError
+            ? { rescheduleError: result.previousAppointmentError.message }
+            : {}),
+        },
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to book this time. Please try another slot.');
-      await load();
+      const bookingError = cause instanceof Error ? cause.message : 'Unable to book this time. Please try another slot.';
+      const availabilityError = await load();
+      setError(availabilityError ? `${bookingError} ${availabilityError}` : bookingError);
     } finally {
       setBooking(false);
     }
@@ -131,7 +150,7 @@ export default function CounsellorProfileScreen() {
           </View>
           {rescheduleFrom ? <InlineMessage tone="info">You are rescheduling. Your current booking stays until the new time is confirmed.</InlineMessage> : null}
           <SectionHeading title="Choose a day and time" detail="Times are shown in your local timezone." />
-          {slots.length ? (
+          {availableSlots.length ? (
             <>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow} accessibilityRole="tablist">
                 {days.map((day) => {
@@ -180,7 +199,7 @@ export default function CounsellorProfileScreen() {
           ) : (
             <SurfaceCard><Text style={styles.empty}>No upcoming availability has been posted.</Text></SurfaceCard>
           )}
-          {slots.length ? (
+          {availableSlots.length ? (
             <>
               <SectionHeading title="Session type" />
               <View style={styles.types}>
