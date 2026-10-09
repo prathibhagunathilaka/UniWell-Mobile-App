@@ -1,3 +1,5 @@
+  // Builds the list of slot start times (slots per day x number of weeks) and sends them in one request.
+  // The backend returns which slots were created and which were skipped because they clashed.
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
