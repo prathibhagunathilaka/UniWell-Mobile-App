@@ -17,7 +17,11 @@ const statusLabels: Record<AppointmentRecord['status'], string> = {
 };
 
 export default function StudentAppointmentDetailsScreen() {
-  const { id: routeId, confirmation } = useLocalSearchParams<{ id: string; confirmation?: string }>();
+  const { id: routeId, confirmation, rescheduleError } = useLocalSearchParams<{
+    id: string;
+    confirmation?: string;
+    rescheduleError?: string;
+  }>();
   const id = Array.isArray(routeId) ? routeId[0] : routeId;
   const [appointment, setAppointment] = useState<AppointmentRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +29,7 @@ export default function StudentAppointmentDetailsScreen() {
   const [cancelling, setCancelling] = useState(false);
   const [notice, setNotice] = useState('');
   const [rating, setRating] = useState(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -92,8 +97,9 @@ export default function StudentAppointmentDetailsScreen() {
 
   // NEW: one-tap rating after a completed session (feeds anonymised satisfaction reporting).
   const sendRating = async (value: number) => {
-    if (!id) return;
+    if (!id || submittingRating) return;
     setRating(value);
+    setSubmittingRating(true);
     try {
       await submitSessionFeedback(id, value);
       setNotice('Thank you. Your feedback helps improve the service and is shared anonymously.');
@@ -101,6 +107,8 @@ export default function StudentAppointmentDetailsScreen() {
     } catch (cause) {
       setRating(0);
       setError(cause instanceof Error ? cause.message : 'Unable to save your feedback.');
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -119,6 +127,11 @@ export default function StudentAppointmentDetailsScreen() {
       />
       {loading ? <LoadingState label="Loading appointment..." /> : null}
       {error ? <InlineMessage tone="error">{error}</InlineMessage> : null}
+      {rescheduleError ? (
+        <InlineMessage tone="error">
+          Your new session is booked, but your previous appointment could not be cancelled: {rescheduleError}. Check My Appointments and cancel it if it is still active.
+        </InlineMessage>
+      ) : null}
       <InlineMessage tone="success">{notice}</InlineMessage>
       {appointment ? (
         <SurfaceCard style={[styles.card, { backgroundColor: AppointmentStatusTones[appointment.status].cardBg, borderColor: AppointmentStatusTones[appointment.status].accent }]}>
@@ -153,7 +166,15 @@ export default function StudentAppointmentDetailsScreen() {
               ) : (
                 <View style={styles.stars}>
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <Pressable key={n} accessibilityRole="button" accessibilityLabel={`${n} out of 5`} onPress={() => void sendRating(n)} style={styles.star}>
+                    <Pressable
+                      key={n}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${n} out of 5`}
+                      accessibilityState={{ disabled: submittingRating, busy: submittingRating }}
+                      disabled={submittingRating}
+                      onPress={() => void sendRating(n)}
+                      style={styles.star}
+                    >
                       <Text style={[styles.starText, n <= rating && styles.starOn]}>★</Text>
                     </Pressable>
                   ))}
