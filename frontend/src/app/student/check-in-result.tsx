@@ -95,30 +95,30 @@ export default function CheckInResultScreen() {
           <WellbeingIllustration label="A hopeful illustration celebrating your wellbeing reflection" />
 
           <SurfaceCard style={styles.scoreCard}>
-        <View style={styles.scoreTop}>
-          <View style={styles.scoreCopy}>
-            <Text style={styles.scoreCaption}>YOUR WELLBEING TODAY</Text>
-            <Text style={styles.level}>{wellbeingLevel}</Text>
-          </View>
-          <View style={styles.scoreBadge}>
-            <Text style={styles.score}>{hasScore ? parsedScore.toFixed(2).replace(/\.?0+$/, '') : '—'}</Text>
-            <Text style={styles.scoreTotal}>/ 5</Text>
-          </View>
-        </View>
-        <View style={styles.scoreTrack}>
-          <View style={[styles.scoreProgress, { width: scorePercent }]} />
-        </View>
-        <Text style={styles.reflection}>{reflections[wellbeingLevel] || 'Your check-in is a snapshot of today, not a definition of you.'}</Text>
+            <View style={styles.scoreTop}>
+              <View style={styles.scoreCopy}>
+                <Text style={styles.scoreCaption}>YOUR WELLBEING TODAY</Text>
+                <Text style={styles.level}>{wellbeingLevel}</Text>
+              </View>
+              <View style={styles.scoreBadge}>
+                <Text style={styles.score}>{hasScore ? parsedScore.toFixed(2).replace(/\.?0+$/, '') : '—'}</Text>
+                <Text style={styles.scoreTotal}>/ 5</Text>
+              </View>
+            </View>
+            <View style={styles.scoreTrack}>
+              <View style={[styles.scoreProgress, { width: scorePercent }]} />
+            </View>
+            <Text style={styles.reflection}>{reflections[wellbeingLevel] || 'Your check-in is a snapshot of today, not a definition of you.'}</Text>
           </SurfaceCard>
 
           <View style={styles.section}>
-        <SectionHeading title="Your responses" detail="A snapshot of what you shared today." />
-        <SurfaceCard style={styles.summaryCard}>
-          <SummaryRow icon="☀" label="Mood" value={mood} />
-          <SummaryRow icon="✦" label="Stress" value={stressLevel} />
-          <SummaryRow icon="☾" label="Sleep" value={sleepQuality} />
-          <SummaryRow icon="▤" label="Study & coping" value={studyCoping} />
-        </SurfaceCard>
+            <SectionHeading title="Your responses" detail="A snapshot of what you shared today." />
+            <SurfaceCard style={styles.summaryCard}>
+              <SummaryRow icon="☀" label="Mood" value={mood} />
+              <SummaryRow icon="✦" label="Stress" value={stressLevel} />
+              <SummaryRow icon="☾" label="Sleep" value={sleepQuality} />
+              <SummaryRow icon="▤" label="Study & coping" value={studyCoping} />
+            </SurfaceCard>
           </View>
           {checkIn?.note.trim() ? (
             <SurfaceCard style={styles.noteCard}>
@@ -128,17 +128,17 @@ export default function CheckInResultScreen() {
           ) : null}
 
           <View style={styles.section}>
-        <SectionHeading title="A gentle next step" detail="Choose one small thing that feels helpful." />
-        <Link href="/student/resources" asChild>
-          <PrimaryButton title="Explore Self-help Resources" />
-        </Link>
-        <SurfaceCard style={styles.counsellingCard}>
-          <Text style={styles.counsellingIcon}>♡</Text>
-          <View style={styles.counsellingCopy}>
-            <Text style={styles.counsellingTitle}>Counselling support</Text>
-            <Text style={styles.counsellingText}>Your university can guide you toward support when you are ready.</Text>
-          </View>
-        </SurfaceCard>
+            <SectionHeading title="A gentle next step" detail="Choose one small thing that feels helpful." />
+            <Link href="/student/resources" asChild>
+              <PrimaryButton title="Explore Self-help Resources" />
+            </Link>
+            <SurfaceCard style={styles.counsellingCard}>
+              <Text style={styles.counsellingIcon}>♡</Text>
+              <View style={styles.counsellingCopy}>
+                <Text style={styles.counsellingTitle}>Counselling support</Text>
+                <Text style={styles.counsellingText}>Your university can guide you toward support when you are ready.</Text>
+              </View>
+            </SurfaceCard>
           </View>
 
           <Link href="/student" asChild>
