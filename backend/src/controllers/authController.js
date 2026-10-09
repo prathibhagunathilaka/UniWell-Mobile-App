@@ -1,4 +1,7 @@
 const crypto = require("crypto");
+
+// eslint-disable-next-line import/no-unresolved
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");

@@ -2,6 +2,8 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
+// eslint-disable-next-line import/no-unresolved
+
 const User = require("../models/User");
 const CheckIn = require("../models/CheckIn");
 const userResponse = require("../utils/userResponse");
