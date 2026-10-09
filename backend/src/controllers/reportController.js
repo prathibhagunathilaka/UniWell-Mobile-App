@@ -12,6 +12,13 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 const local = (date) => new Date(new Date(date).getTime() + TZ_OFFSET_MIN * 60 * 1000);
 const dayKey = (date) => local(date).toISOString().slice(0, 10);
+// Monday (report time zone) of the week containing `date`, as YYYY-MM-DD.
+const weekStartKey = (date) => {
+  const l = local(date);
+  const d = new Date(Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), l.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+};
 const pct = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : null);
 const suppress = (n) => (n >= MIN_GROUP ? n : `<${MIN_GROUP}`);
 
@@ -64,6 +71,8 @@ const buildReport = async (filters) => {
   const weekday = Array(7).fill(0);
   const hour = Array(24).fill(0);
   const perDay = new Map();
+  const perWeek = new Map();
+  const cancellations = { byStudent: 0, byCounsellor: 0 };
   const perCounsellor = new Map(counsellors.map((c) => [String(c._id), {
     counsellorId: String(c._id), name: c.name, bookings: 0, completed: 0, cancelled: 0, upcoming: 0, openSlots: 0
   }]));
@@ -72,6 +81,16 @@ const buildReport = async (filters) => {
     byStatus[b.status] += 1;
     bySessionType[b.sessionType] = (bySessionType[b.sessionType] || 0) + 1;
     perDay.set(dayKey(b.startsAt), (perDay.get(dayKey(b.startsAt)) || 0) + 1);
+    const wk = weekStartKey(b.startsAt);
+    const week = perWeek.get(wk) || { bookings: 0, completed: 0, cancelled: 0 };
+    week.bookings += 1;
+    if (b.status === "completed") week.completed += 1;
+    if (b.status === "cancelled") {
+      week.cancelled += 1;
+      if (b.cancelledBy === "student") cancellations.byStudent += 1;
+      if (b.cancelledBy === "counsellor") cancellations.byCounsellor += 1;
+    }
+    perWeek.set(wk, week);
     if (b.status !== "cancelled") {
       const l = local(b.startsAt);
       weekday[l.getUTCDay()] += 1;
@@ -88,6 +107,18 @@ const buildReport = async (filters) => {
   for (const s of openSlots) {
     const row = perCounsellor.get(String(s.counsellorId));
     if (row) row.openSlots += 1;
+  }
+
+  // Zero-filled weekly series (oldest first) for trend charts.
+  const weekly = [];
+  const lastWeek = weekStartKey(to);
+  for (
+    let cursor = new Date(`${weekStartKey(from)}T00:00:00Z`);
+    cursor.toISOString().slice(0, 10) <= lastWeek && weekly.length < 70;
+    cursor = new Date(cursor.getTime() + 7 * DAY_MS)
+  ) {
+    const key = cursor.toISOString().slice(0, 10);
+    weekly.push({ weekStart: key, ...(perWeek.get(key) || { bookings: 0, completed: 0, cancelled: 0 }) });
   }
 
   const ratings = bookings.map((b) => b.feedbackRating).filter((r) => Number.isFinite(r));
@@ -166,6 +197,8 @@ const buildReport = async (filters) => {
     byWeekday: WEEKDAYS.map((label, i) => ({ label, count: weekday[i] })),
     byHour: hour.map((count, h) => ({ hour: h, count })),
     byDay: [...perDay.entries()].sort().map(([date, count]) => ({ date, count })),
+    weekly,
+    cancellations,
     workload,
     satisfaction,
     checkIns: checkInsVisible

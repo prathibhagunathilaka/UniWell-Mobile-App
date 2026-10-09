@@ -38,6 +38,8 @@ export type UsageReport = {
   byWeekday: { label: string; count: number }[];
   byHour: { hour: number; count: number }[];
   byDay: { date: string; count: number }[];
+  weekly: { weekStart: string; bookings: number; completed: number; cancelled: number }[];
+  cancellations: { byStudent: number; byCounsellor: number };
   workload: WorkloadRow[];
   satisfaction: { suppressed: true; reason: string } | { suppressed: false; responses: number; average: number };
   checkIns:

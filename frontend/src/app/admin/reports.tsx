@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -181,14 +183,26 @@ export default function AdminReportsScreen() {
           <SectionHeading title="Counsellor workload" detail="Bookings handled versus open capacity." />
           {report.workload.length === 0 ? <SurfaceCard><Text style={styles.muted}>No active counsellors.</Text></SurfaceCard> : null}
           {report.workload.map((w) => (
-            <SurfaceCard key={w.counsellorId} style={styles.workload}>
-              <Text style={styles.workName}>{w.name}</Text>
-              <Text style={styles.muted}>{w.bookings} bookings · {w.completed} completed · {w.cancelled} cancelled · {w.upcoming} upcoming</Text>
-              <View style={styles.barTrack}>
-                <View style={[styles.barFill, { width: `${Math.min(100, w.utilisationRate ?? 0)}%`, backgroundColor: (w.utilisationRate ?? 0) >= 85 ? Colors.error : Colors.primary }]} />
-              </View>
-              <Text style={styles.muted}>Capacity used {fmtPct(w.utilisationRate)} · {w.openSlots} open slots</Text>
-            </SurfaceCard>
+            <Pressable
+              key={w.counsellorId}
+              accessibilityRole="button"
+              accessibilityLabel={`${w.name}, ${w.bookings} bookings. Open detailed workload`}
+              onPress={() => router.push({ pathname: '/admin/reports/[id]', params: { id: w.counsellorId, range } })}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              <SurfaceCard style={styles.workload}>
+                <View style={styles.workHead}>
+                  <Text style={styles.workName}>{w.name}</Text>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+                </View>
+                <Text style={styles.muted}>{w.bookings} bookings · {w.completed} completed · {w.cancelled} cancelled · {w.upcoming} upcoming</Text>
+                <View style={styles.barTrack}>
+                  <View style={[styles.barFill, { width: `${Math.min(100, w.utilisationRate ?? 0)}%`, backgroundColor: (w.utilisationRate ?? 0) >= 85 ? Colors.error : Colors.primary }]} />
+                </View>
+                <Text style={styles.muted}>Capacity used {fmtPct(w.utilisationRate)} · {w.openSlots} open slots</Text>
+                <Text style={styles.tapHint}>Tap for full details and trend</Text>
+              </SurfaceCard>
+            </Pressable>
           ))}
 
           <SectionHeading title="Session satisfaction" />
@@ -244,7 +258,10 @@ const styles = StyleSheet.create({
   barFill: { height: 10, borderRadius: 5 },
   barValue: { width: 30, textAlign: 'right', color: Colors.accent, fontSize: 12, fontWeight: '800' },
   workload: { gap: Space.xs },
-  workName: { color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  workHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
+  workName: { flex: 1, color: Colors.accent, fontSize: 16, fontWeight: '800' },
+  tapHint: { color: Colors.primary, fontSize: 12, fontWeight: '800' },
+  pressed: { opacity: 0.85 },
   muted: { color: Colors.muted, fontSize: 13 },
   privacy: { color: Colors.muted, fontSize: 12, textAlign: 'center' },
 });
