@@ -21,10 +21,21 @@ export default function StudentAppointmentsScreen() {
     try {
       const response = await getStudentAppointments();
       const now = Date.now();
-      const next = response.appointments.filter((item) =>
-        new Date(item.startsAt).getTime() >= now && ['pending', 'confirmed'].includes(item.status));
+      const next = response.appointments
+        .filter((item) => {
+          const startsAt = new Date(item.startsAt).getTime();
+          return Number.isFinite(startsAt) && startsAt >= now &&
+            ['pending', 'confirmed'].includes(item.status);
+        })
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
       setUpcoming(next);
-      setEarlier(response.appointments.filter((item) => !next.includes(item)));
+      setEarlier(response.appointments
+        .filter((item) => !next.includes(item))
+        .sort((a, b) => {
+          const aTime = new Date(a.startsAt).getTime();
+          const bTime = new Date(b.startsAt).getTime();
+          return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+        }));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load your appointments.');
     } finally {
