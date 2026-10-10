@@ -1,3 +1,4 @@
+// Student booking screen: pick a date, time and session type, then book (or reschedule) a session.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';

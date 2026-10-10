@@ -1,3 +1,4 @@
+// API calls for counselling: booking, cancelling, rescheduling and loading appointments and availability.
 import { apiFetch } from './api';
 
 export type CounsellorProfile = {

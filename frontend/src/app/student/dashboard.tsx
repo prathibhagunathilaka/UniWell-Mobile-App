@@ -1,3 +1,4 @@
+// Student home: greeting, quick actions and the student's upcoming counselling appointments.
 import { Link, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';

@@ -1,3 +1,4 @@
+// Student appointment details: view a booking, add it to the calendar, reschedule or cancel it.
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';

@@ -1,3 +1,4 @@
+// Booking status labels and colours (pending, confirmed, cancelled, completed) used on appointment screens.
 import { AppointmentRecord } from '@/services/counsellingService';
 
 type Status = AppointmentRecord['status'];

@@ -1,3 +1,4 @@
+// Adds quick 30-minute open slots on the chosen day after checking the time is HH:MM and in the future.
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';

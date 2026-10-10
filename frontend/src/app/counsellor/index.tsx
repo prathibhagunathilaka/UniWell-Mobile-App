@@ -1,3 +1,4 @@
+// Counsellor home: shows today's sessions, pending requests and quick links to calendar, availability and sync.
 import { Ionicons } from '@expo/vector-icons';
 import { Href, router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';

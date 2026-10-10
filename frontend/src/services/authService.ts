@@ -1,3 +1,4 @@
+// API calls for login, registration and profile changes (including email verification codes).
 import { apiFetch } from './api';
 
 export type UserRole = 'student' | 'counsellor' | 'admin';

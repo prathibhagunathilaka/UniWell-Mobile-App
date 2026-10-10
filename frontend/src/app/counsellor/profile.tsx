@@ -1,3 +1,4 @@
+// Counsellor profile: view and update the counsellor's own details shown to students.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
