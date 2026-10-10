@@ -12,7 +12,7 @@ const formatWhen = (date) =>
     minute: "2-digit"
   });
 
-const REMINDER_TYPES = new Set(["reminder_24h", "reminder_1h"]);
+const REMINDER_TYPES = new Set(["reminder_24h", "reminder_1h", "reminder_5m", "session_ongoing"]);
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 // Sends a phone (push) notification through Expo's push service. Best-effort: never throws.

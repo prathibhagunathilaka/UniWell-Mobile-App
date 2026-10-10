@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
     },
     // NEW: per-user settings chosen in the app's Settings menu.
     // pushEnabled: booking updates (in-app bell + email copy).
-    // remindersEnabled: the 24h / 1h session reminders.
+    // remindersEnabled: the 24h / 1h / 5m / ongoing session reminders.
     preferences: {
       pushEnabled: { type: Boolean, default: true },
       remindersEnabled: { type: Boolean, default: true }

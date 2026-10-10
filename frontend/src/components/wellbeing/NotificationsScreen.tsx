@@ -6,10 +6,10 @@ import { ScreenBackButton } from '@/components/wellbeing/ScreenBackButton';
 import { InlineMessage, LoadingState, PageHeading, SurfaceCard, WellbeingPage } from '@/components/wellbeing/WellbeingUI';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import {
-    AppNotification,
-    getNotifications,
-    markAllNotificationsRead,
-    markNotificationRead,
+  AppNotification,
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
 } from '@/services/notificationService';
 
 const icons: Record<string, string> = {
@@ -19,6 +19,8 @@ const icons: Record<string, string> = {
   booking_completed: '★',
   reminder_24h: '⏰',
   reminder_1h: '⏰',
+  reminder_5m: '⏰',
+  session_ongoing: '▶',
   system: 'ℹ',
 };
 

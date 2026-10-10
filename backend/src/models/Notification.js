@@ -20,6 +20,8 @@ const notificationSchema = new mongoose.Schema(
         "booking_completed",
         "reminder_24h",
         "reminder_1h",
+        "reminder_5m",
+        "session_ongoing",
         "system"
       ]
     },

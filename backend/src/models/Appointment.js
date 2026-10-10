@@ -73,6 +73,14 @@ const appointmentSchema = new mongoose.Schema(
     reminder1hSent: {
       type: Boolean,
       default: false
+    },
+    reminder5mSent: {
+      type: Boolean,
+      default: false
+    },
+    reminderOngoingSent: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }
