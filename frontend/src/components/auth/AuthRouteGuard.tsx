@@ -7,7 +7,7 @@ import { PRIMARY } from './AuthUI';
 
 export function AuthRouteGuard({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  const { user, token, loading, isAuthenticated, authFlowStarted } = useAuth();
+  const { user, token, loading, isAuthenticated } = useAuth();
   const requiredRole = pathname === '/student' || pathname.startsWith('/student/')
     ? 'student'
     : pathname === '/counsellor' || pathname.startsWith('/counsellor/')
@@ -29,9 +29,8 @@ export function AuthRouteGuard({ children }: PropsWithChildren) {
     return <Redirect href={getAuthenticatedHome(user)} />;
   }
 
-  if (!user && pathname.startsWith('/auth/') && !authFlowStarted) {
-    return <Redirect href="/" />;
-  }
+  // NOTE: the old rule that bounced signed-out users on /auth/* back to the Get Started screen was
+  // removed. It caused logout to land on Get Started instead of the login form.
 
   if (requiredRole && (!user || !token)) {
     console.info('[ROUTER] protected route denied:', pathname, 'authenticated:', isAuthenticated);

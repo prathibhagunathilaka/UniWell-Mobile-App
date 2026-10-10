@@ -15,6 +15,8 @@ import {
   UsageReport,
 } from '@/services/adminService';
 import { saveAndShareTextFile } from '@/utils/shareFile';
+import { exportHtmlAsPdf } from '@/utils/sharePdf';
+import { buildUsageReportHtml } from '@/utils/usageReportPdf';
 
 const DAY = 24 * 60 * 60 * 1000;
 const ranges = [
@@ -67,6 +69,7 @@ export default function AdminReportsScreen() {
   const [report, setReport] = useState<UsageReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -119,6 +122,34 @@ export default function AdminReportsScreen() {
     }
   };
 
+  const exportPdf = async () => {
+    if (!report) return;
+    setExportingPdf(true);
+    setError('');
+    setMessage('');
+    try {
+      const html = buildUsageReportHtml({
+        report,
+        rangeLabel: ranges.find((r) => r.key === range)?.label ?? '',
+        sessionTypeLabel: sessionTypes.find((t) => t.key === sessionType)?.label ?? 'All types',
+        counsellorLabel: counsellors.find((c) => c._id === counsellorId)?.name ?? 'All counsellors',
+      });
+      const result = await exportHtmlAsPdf(
+        html,
+        `uniwell-usage-report-${new Date().toISOString().slice(0, 10)}`,
+        { width: 595, height: 842 },
+        'Save or share the usage report',
+      );
+      setMessage(result === 'shared'
+        ? 'PDF ready. It contains aggregate numbers only.'
+        : 'Choose “Save as PDF” in the print dialog.');
+    } catch (cause) {
+      setError(cause instanceof Error && cause.message ? `Unable to create the PDF: ${cause.message}` : 'Unable to create the PDF.');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const hourData = report
     ? report.byHour.filter((h) => h.hour >= 6 && h.hour <= 21).map((h) => ({ label: `${String(h.hour).padStart(2, '0')}:00`, value: h.count }))
     : [];
@@ -151,8 +182,7 @@ export default function AdminReportsScreen() {
       />
 
       {loading ? <LoadingState label="Building report..." /> : null}
-      <InlineMessage tone="error">{error}</InlineMessage>
-      <InlineMessage tone="success">{message}</InlineMessage>
+      {!report && !loading ? <InlineMessage tone="error">{error}</InlineMessage> : null}
 
       {report && !loading ? (
         <>
@@ -227,7 +257,10 @@ export default function AdminReportsScreen() {
           </SurfaceCard>
 
           <Text style={styles.privacy}>{report.anonymisation}</Text>
-          <PrimaryButton title="Export report (CSV)" onPress={() => void exportCsv()} loading={exporting} />
+          <InlineMessage tone="error">{error}</InlineMessage>
+          <InlineMessage tone="success">{message}</InlineMessage>
+          <PrimaryButton title="Export report (PDF)" onPress={() => void exportPdf()} loading={exportingPdf} disabled={exporting} />
+          <PrimaryButton title="Export report (CSV)" onPress={() => void exportCsv()} loading={exporting} disabled={exportingPdf} style={styles.secondaryButton} />
         </>
       ) : null}
     </WellbeingPage>
@@ -262,6 +295,7 @@ const styles = StyleSheet.create({
   workName: { flex: 1, color: Colors.accent, fontSize: 16, fontWeight: '800' },
   tapHint: { color: Colors.primary, fontSize: 12, fontWeight: '800' },
   pressed: { opacity: 0.85 },
+  secondaryButton: { backgroundColor: Colors.white, borderWidth: 1.5, borderColor: Colors.primary },
   muted: { color: Colors.muted, fontSize: 13 },
   privacy: { color: Colors.muted, fontSize: 12, textAlign: 'center' },
 });

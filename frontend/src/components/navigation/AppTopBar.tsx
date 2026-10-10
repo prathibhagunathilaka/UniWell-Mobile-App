@@ -1,13 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UniWellLogo } from '@/components/brand/UniWellLogo';
+import { AboutContent, HelpContent, PanelShell, PrivacyContent } from '@/components/navigation/SettingsPanels';
 import { NotificationBell } from '@/components/wellbeing/NotificationBell';
+import { LanguageCode, LANGUAGES } from '@/constants/translations';
 import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { FONT_SIZE_OPTIONS, useFontScale } from '@/contexts/FontScaleContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { APPEARANCE_OPTIONS, useAppTheme } from '@/contexts/ThemeContext';
+import { getPreferences, Preferences, updatePreferences } from '@/services/preferencesService';
 
 type Role = 'student' | 'counsellor' | 'admin';
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -41,11 +47,12 @@ export function AppTopBar() {
   }
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() || 'U';
-  // Students and counsellors each have their own profile screen; admins have none yet.
+  // Every role has its own profile screen.
   const openProfile = () => {
     setMenuOpen(false);
     if (role === 'student') router.push('/student/profile');
     if (role === 'counsellor') router.push('/counsellor/profile');
+    if (role === 'admin') router.push('/admin/profile');
   };
 
   return (
@@ -82,6 +89,7 @@ export function AppTopBar() {
         top={barBottom}
         name={user?.name || 'Your account'}
         roleLabel={ROLE_LABEL[role]}
+        role={role}
         initial={initial}
         onClose={() => setMenuOpen(false)}
         onProfile={openProfile}
@@ -90,11 +98,14 @@ export function AppTopBar() {
   );
 }
 
+type Panel = 'privacy' | 'help' | 'about' | null;
+
 function MenuSheet({
   visible,
   top,
   name,
   roleLabel,
+  role,
   initial,
   onClose,
   onProfile,
@@ -103,73 +114,146 @@ function MenuSheet({
   top: number;
   name: string;
   roleLabel: string;
+  role: Role;
   initial: string;
   onClose: () => void;
   onProfile: () => void;
 }) {
   const { logout } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // DUMMY settings state: visual only, nothing is saved or applied anywhere.
-  const [fontSize, setFontSize] = useState<'Small' | 'Default' | 'Large'>('Default');
-  const [appearance, setAppearance] = useState<'Light' | 'Dark' | 'System'>('Light');
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [panel, setPanel] = useState<Panel>(null);
+  // Font size, appearance and language are applied app-wide and remembered on this device.
+  const { size: fontSize, setSize: setFontSize } = useFontScale();
+  const { preference: appearance, setPreference: setAppearance } = useAppTheme();
+  const { language, setLanguage } = useLanguage();
+  // Notification settings are saved on the server (the backend honours them when sending).
+  const [prefs, setPrefs] = useState<Preferences>({ pushEnabled: true, remindersEnabled: true });
+  const [prefsError, setPrefsError] = useState('');
+
+  useEffect(() => {
+    if (!visible || !settingsOpen) return;
+    let active = true;
+    getPreferences()
+      .then((loaded) => {
+        if (!active) return;
+        setPrefs(loaded);
+        setPrefsError('');
+      })
+      .catch(() => {
+        if (active) setPrefsError("Couldn't load your notification settings.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [visible, settingsOpen]);
+
+  const changePref = async (key: keyof Preferences, value: boolean) => {
+    const previous = prefs;
+    setPrefs({ ...previous, [key]: value });
+    setPrefsError('');
+    try {
+      setPrefs(await updatePreferences({ [key]: value }));
+    } catch {
+      setPrefs(previous);
+      setPrefsError("Couldn't save that change. Please try again.");
+    }
+  };
 
   const close = () => {
     setSettingsOpen(false);
+    setPanel(null);
     onClose();
   };
+
+  const go = (path: '/auth/forgot-password' | '/student/emergency') => {
+    close();
+    router.push(path);
+  };
+
+  const panelTitle = panel === 'privacy' ? 'Privacy & security' : panel === 'help' ? 'Help & support' : 'About UniWell';
+  const languageLabel = LANGUAGES.find((item) => item.code === language)?.label ?? 'English';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent>
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close menu" />
       <View style={[styles.sheet, { top }]} pointerEvents="box-none">
-        <ScrollView style={styles.sheetScroll} bounces={false} showsVerticalScrollIndicator={false}>
-          <View style={styles.userRow}>
-            <View style={styles.sheetAvatar}><Text style={styles.avatarText}>{initial}</Text></View>
-            <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={styles.userName}>{name}</Text>
-              <Text style={styles.userRole}>{roleLabel}</Text>
+        {panel ? (
+          <PanelShell title={panelTitle} onBack={() => setPanel(null)}>
+            {panel === 'privacy' ? (
+              <PrivacyContent
+                role={role}
+                onChangePassword={() => go('/auth/forgot-password')}
+                onManageAccount={() => {
+                  close();
+                  onProfile();
+                }}
+                onSignedOut={() => {
+                  close();
+                  void logout();
+                }}
+              />
+            ) : null}
+            {panel === 'help' ? <HelpContent role={role} onHelpNow={() => go('/student/emergency')} /> : null}
+            {panel === 'about' ? <AboutContent /> : null}
+          </PanelShell>
+        ) : (
+          <ScrollView style={styles.sheetScroll} bounces={false} showsVerticalScrollIndicator={false}>
+            <View style={styles.userRow}>
+              <View style={styles.sheetAvatar}><Text style={styles.avatarText}>{initial}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={styles.userName}>{name}</Text>
+                <Text style={styles.userRole}>{roleLabel}</Text>
+              </View>
             </View>
-          </View>
 
-          <MenuRow icon="person-outline" label="My profile" onPress={() => { onProfile(); }} />
-          <MenuRow
-            icon="settings-outline"
-            label="Settings"
-            trailing={settingsOpen ? 'chevron-up' : 'chevron-down'}
-            onPress={() => setSettingsOpen((open) => !open)}
-          />
+            <MenuRow icon="person-outline" label="My profile" onPress={() => { onProfile(); }} />
+            <MenuRow
+              icon="settings-outline"
+              label="Settings"
+              trailing={settingsOpen ? 'chevron-up' : 'chevron-down'}
+              onPress={() => setSettingsOpen((open) => !open)}
+            />
 
-          {settingsOpen ? (
-            <View style={styles.settings}>
-              <Text style={styles.settingLabel}>Font size</Text>
-              <Segmented options={['Small', 'Default', 'Large']} value={fontSize} onChange={setFontSize} />
+            {settingsOpen ? (
+              <View style={styles.settings}>
+                <Text style={styles.settingLabel}>Font size</Text>
+                <Segmented options={FONT_SIZE_OPTIONS} value={fontSize} onChange={setFontSize} />
 
-              <Text style={styles.settingLabel}>Appearance</Text>
-              <Segmented options={['Light', 'Dark', 'System']} value={appearance} onChange={setAppearance} />
+                <Text style={styles.settingLabel}>Appearance</Text>
+                <Segmented options={APPEARANCE_OPTIONS} value={appearance} onChange={setAppearance} />
 
-              <ToggleRow label="Push notifications" value={pushEnabled} onChange={setPushEnabled} />
-              <ToggleRow label="Session reminders" value={remindersEnabled} onChange={setRemindersEnabled} />
+                <Text style={styles.settingLabel}>Language</Text>
+                <Segmented
+                  options={LANGUAGES.map((item) => item.label)}
+                  value={languageLabel}
+                  onChange={(label) => {
+                    const next = LANGUAGES.find((item) => item.label === label);
+                    if (next) setLanguage(next.code as LanguageCode);
+                  }}
+                />
 
-              <MenuRow compact icon="language-outline" label="Language" detail="English" trailing="chevron-forward" onPress={() => undefined} />
-              <MenuRow compact icon="lock-closed-outline" label="Privacy & security" trailing="chevron-forward" onPress={() => undefined} />
-              <MenuRow compact icon="help-circle-outline" label="Help & support" trailing="chevron-forward" onPress={() => undefined} />
-              <MenuRow compact icon="information-circle-outline" label="About UniWell" trailing="chevron-forward" onPress={() => undefined} />
-            </View>
-          ) : null}
+                <ToggleRow label="Push notifications" value={prefs.pushEnabled} onChange={(v) => void changePref('pushEnabled', v)} />
+                <ToggleRow label="Session reminders" value={prefs.remindersEnabled} onChange={(v) => void changePref('remindersEnabled', v)} />
+                {prefsError ? <Text style={styles.settingError}>{prefsError}</Text> : null}
 
-          <View style={styles.divider} />
-          <MenuRow
-            icon="log-out-outline"
-            label="Log out"
-            danger
-            onPress={() => {
-              close();
-              void logout();
-            }}
-          />
-        </ScrollView>
+                <MenuRow compact icon="lock-closed-outline" label="Privacy & security" trailing="chevron-forward" onPress={() => setPanel('privacy')} />
+                <MenuRow compact icon="help-circle-outline" label="Help & support" trailing="chevron-forward" onPress={() => setPanel('help')} />
+                <MenuRow compact icon="information-circle-outline" label="About UniWell" trailing="chevron-forward" onPress={() => setPanel('about')} />
+              </View>
+            ) : null}
+
+            <View style={styles.divider} />
+            <MenuRow
+              icon="log-out-outline"
+              label="Log out"
+              danger
+              onPress={() => {
+                close();
+                void logout();
+              }}
+            />
+          </ScrollView>
+        )}
       </View>
     </Modal>
   );
@@ -295,5 +379,6 @@ const styles = StyleSheet.create({
   segmentText: { color: Colors.muted, fontSize: 13, fontWeight: '700' },
   segmentTextOn: { color: Colors.accent, fontWeight: '900' },
   toggleRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingError: { color: Colors.error, fontSize: 12 },
   toggleLabel: { color: Colors.accent, fontSize: 14, fontWeight: '600' },
 });

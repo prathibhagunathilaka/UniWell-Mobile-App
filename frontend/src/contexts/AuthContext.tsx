@@ -63,9 +63,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await clearSession();
+    // Everything below runs in the same tick so React renders ONE state: no user, auth flow started,
+    // heading to the login form. (Clearing the session first used to let the route guard briefly see
+    // "signed out + welcome not seen" and bounce the person to the Get Started screen.)
     setAuthFlowStarted(true);
+    const clearing = clearSession();
     router.replace('/auth/login');
+    await clearing;
   }, [clearSession]);
 
   const beginAuthFlow = useCallback(() => {

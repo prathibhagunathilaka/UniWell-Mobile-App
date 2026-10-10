@@ -198,7 +198,67 @@ const getOverview = async (req, res) => {
   }
 };
 
+// Admin's own profile (name + phone are editable; email and username are fixed identifiers).
+const adminProfileResponse = (user) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  username: user.username || "",
+  phoneNumber: user.phoneNumber || "",
+  role: user.role,
+  status: user.status
+});
+
+const getAdminProfile = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id, role: "admin" }).lean();
+    if (!user) return res.status(404).json({ message: "Admin account not found." });
+    return res.status(200).json({ admin: adminProfileResponse(user) });
+  } catch (error) {
+    console.error("Admin profile lookup failed:", error.code || error.name);
+    return res.status(500).json({ message: "Unable to load your profile right now." });
+  }
+};
+
+const updateAdminProfile = async (req, res) => {
+  const { name, phoneNumber } = req.body || {};
+  const update = {};
+
+  if (name !== undefined) {
+    if (typeof name !== "string" || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({ message: "Enter a valid name." });
+    }
+    update.name = name.trim();
+  }
+  if (phoneNumber !== undefined) {
+    const phone = typeof phoneNumber === "string" ? phoneNumber.trim() : "";
+    // Phone is optional for admins: an empty value clears it.
+    if (phone && (!/^\+?[0-9().\-\s]{5,25}$/.test(phone) || (phone.match(/\d/g) || []).length < 5)) {
+      return res.status(400).json({ message: "Enter a valid phone number." });
+    }
+    update.phoneNumber = phone;
+  }
+  if (!Object.keys(update).length) {
+    return res.status(400).json({ message: "Nothing to update." });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: req.user.id, role: "admin" },
+      { $set: update },
+      { new: true, runValidators: true }
+    ).lean();
+    if (!user) return res.status(404).json({ message: "Admin account not found." });
+    return res.status(200).json({ message: "Profile updated.", admin: adminProfileResponse(user) });
+  } catch (error) {
+    console.error("Admin profile update failed:", error.code || error.name);
+    return res.status(500).json({ message: "Unable to update your profile right now." });
+  }
+};
+
 module.exports = {
+  getAdminProfile,
+  updateAdminProfile,
   getPendingCounsellors,
   updateCounsellorApproval,
   listManagedCounsellors,

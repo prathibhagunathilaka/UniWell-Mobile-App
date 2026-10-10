@@ -1,152 +1,46 @@
-import { Redirect } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { InlineMessage, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
-import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as Space } from '@/constants/wellbeingTheme';
-import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
+import { UniWellLogo } from '@/components/brand/UniWellLogo';
+import { PrimaryButton, WellbeingIllustration } from '@/components/wellbeing/WellbeingUI';
+import { WellbeingColors as Colors } from '@/constants/wellbeingTheme';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function IndexRoute() {
-  const { user, loading, sessionNotice, beginAuthFlow } = useAuth();
-
-  useEffect(() => {
-    if (!loading) {
-      console.info('[ROUTER] initial route decision:', user ? getAuthenticatedHome(user) : 'Welcome (unauthenticated)');
-    }
-  }, [loading, user]);
-
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading UniWell...</Text>
-      </View>
-    );
-  }
-
-  if (user) {
-    return <Redirect href={getAuthenticatedHome(user)} />;
-  }
+// Get Started (welcome) screen — the first screen signed-out users see.
+export default function GetStartedScreen() {
+  const { beginAuthFlow } = useAuth();
 
   return (
-    <View style={styles.page}>
+    <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.content}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}><Text style={styles.brandLetter}>U</Text></View>
-          <Text style={styles.brandName}>UniWell</Text>
-        </View>
-        <WellbeingIllustration label="A calm, welcoming illustration for university wellbeing" />
-        <Text style={styles.eyebrow}>A little space for you</Text>
-        <Text style={styles.title}>Your Wellbeing Matters</Text>
+        <UniWellLogo size={44} showName />
+        <WellbeingIllustration label="A calm moment for student wellbeing" />
+        <Text style={styles.title}>Your wellbeing, supported.</Text>
         <Text style={styles.subtitle}>
-          Take a moment to check in, find support, and access wellbeing resources designed for university life.
+          Check in, book counselling and find support that fits student life — all in one place.
         </Text>
-        {sessionNotice ? <InlineMessage tone="error">{sessionNotice}</InlineMessage> : null}
-        <Pressable accessibilityRole="button" onPress={beginAuthFlow} style={styles.primaryButton}>
-          <Text style={styles.primaryText}>GET STARTED</Text>
-        </Pressable>
-        <View style={styles.privacyCard}>
-          <Text style={styles.privacyTitle}>A supportive space, on your terms</Text>
-          <Text style={styles.privacyText}>Your check-ins are private to your account and are here to help you reflect.</Text>
-        </View>
+        <PrimaryButton title="Get Started" onPress={beginAuthFlow} />
+        <Link href="/auth/register" asChild>
+          <Pressable accessibilityRole="link">
+            <Text style={styles.link}>New here? Create an account</Text>
+          </Pressable>
+        </Link>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: Space.md,
-    paddingVertical: Space.lg,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  content: {
-    width: '100%',
-    maxWidth: 520,
-    gap: Space.md,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.sm,
-  },
-  brandMark: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-  },
-  brandLetter: {
-    color: Colors.accent,
-    fontSize: 19,
-    fontWeight: '800',
-  },
-  brandName: {
-    color: Colors.accent,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  eyebrow: {
-    color: Colors.primary,
-    fontWeight: '800',
-    fontSize: 12,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: Colors.accent,
-    fontSize: 31,
-    lineHeight: 38,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: Colors.muted,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  primaryButton: {
-    minHeight: 54,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryText: {
-    color: Colors.accent,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  privacyCard: {
-    backgroundColor: Colors.paleBlue,
-    borderRadius: Radius.md,
-    padding: Space.md,
-    gap: Space.xs,
-  },
-  privacyTitle: {
-    color: Colors.accent,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  privacyText: {
-    color: Colors.muted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Space.sm,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
     backgroundColor: Colors.background,
   },
-  loadingText: {
-    color: Colors.accent,
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  content: { width: '100%', maxWidth: 520, gap: 18 },
+  title: { color: Colors.accent, fontSize: 32, lineHeight: 40, fontWeight: '800' },
+  subtitle: { color: Colors.muted, fontSize: 16, lineHeight: 24 },
+  link: { color: Colors.accent, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingVertical: 6 },
 });

@@ -1,5 +1,3 @@
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
@@ -9,6 +7,7 @@ import { WellbeingColors as Colors, WellbeingRadius as Radius, WellbeingSpace as
 import { useAuth } from '@/contexts/AuthContext';
 import { AppointmentRecord, getCounsellorAppointments } from '@/services/counsellingService';
 import { buildAppointmentsHtml, DAY_MS, ExportFormat, MAX_RANGE_DAYS, pageSize } from '@/utils/appointmentPdf';
+import { exportHtmlAsPdf } from '@/utils/sharePdf';
 
 type Status = Exclude<AppointmentRecord['status'], 'cancelled'>;
 type Session = AppointmentRecord['sessionType'];
@@ -129,10 +128,18 @@ export default function CounsellorExportScreen() {
   };
 
   const exportPdf = async () => {
-    if (!from || !to || rangeError) return;
-    setExporting(true);
     setError('');
     setMessage('');
+    // Validate on press (instead of silently disabling the button) so the reason is always shown.
+    if (!from || !to || rangeError) {
+      setError(rangeError || 'Enter a valid start and end date.');
+      return;
+    }
+    if (filtered.length === 0) {
+      setError('No appointments match these dates and filters, so there is nothing to export. Widen the date range or turn on more statuses (e.g. Open slots).');
+      return;
+    }
+    setExporting(true);
     try {
       const html = buildAppointmentsHtml({
         format,
@@ -143,20 +150,17 @@ export default function CounsellorExportScreen() {
         filterSummary: filterSummary(),
         includeContacts,
       });
-      if (Platform.OS === 'web') {
-        await Print.printAsync({ html }); // browser print dialog -> "Save as PDF"
-        setMessage('Choose “Save as PDF” in the print dialog.');
-        return;
-      }
-      const { uri } = await Print.printToFileAsync({ html, ...pageSize(format) });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Save or share your appointments PDF' });
-        setMessage('PDF ready. Pick “Save to Files / Drive” or any app to keep it on your device.');
-      } else {
-        setMessage(`PDF created at ${uri}`);
-      }
+      const result = await exportHtmlAsPdf(
+        html,
+        `uniwell-appointments-${fmt(from)}-to-${fmt(to)}`,
+        pageSize(format),
+        'Save or share your appointments PDF',
+      );
+      setMessage(result === 'shared'
+        ? 'PDF ready. Pick “Save to Files / Drive” or any app to keep it.'
+        : 'Choose “Save as PDF” in the print dialog.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to create the PDF.');
+      setError(cause instanceof Error && cause.message ? `Unable to create the PDF: ${cause.message}` : 'Unable to create the PDF. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -172,8 +176,6 @@ export default function CounsellorExportScreen() {
       <ScreenBackButton fallback="/counsellor/sync" label="Booking sync" />
       <PageHeading title="Export appointments" subtitle="Create a PDF as a table or a calendar grid, for the dates and filters you choose." />
       {loading ? <LoadingState label="Loading appointments..." /> : null}
-      <InlineMessage tone="error">{error}</InlineMessage>
-      <InlineMessage tone="success">{message}</InlineMessage>
 
       <SectionHeading title="Layout" />
       <View style={styles.row}>
@@ -224,7 +226,10 @@ export default function CounsellorExportScreen() {
       <SurfaceCard style={styles.summary}>
         <Text style={styles.summaryText}>{rangeError ? 'Fix the dates to see matches.' : `${filtered.length} appointment${filtered.length === 1 ? '' : 's'} will be exported.`}</Text>
       </SurfaceCard>
-      <PrimaryButton title={Platform.OS === 'web' ? 'Print / save as PDF' : 'Export PDF to device'} onPress={() => void exportPdf()} loading={exporting} disabled={Boolean(rangeError) || loading || filtered.length === 0} />
+      {/* Messages sit right above the button so they are visible where the user tapped. */}
+      <InlineMessage tone="error">{error}</InlineMessage>
+      <InlineMessage tone="success">{message}</InlineMessage>
+      <PrimaryButton title={Platform.OS === 'web' ? 'Print / save as PDF' : 'Export PDF to device'} onPress={() => void exportPdf()} loading={exporting} disabled={loading} />
     </WellbeingPage>
   );
 }

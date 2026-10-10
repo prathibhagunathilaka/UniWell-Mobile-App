@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+// eslint-disable-next-line import/no-unresolved
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -67,6 +69,13 @@ const userSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       max: 80
+    },
+    // NEW: per-user settings chosen in the app's Settings menu.
+    // pushEnabled: booking updates (in-app bell + email copy).
+    // remindersEnabled: the 24h / 1h session reminders.
+    preferences: {
+      pushEnabled: { type: Boolean, default: true },
+      remindersEnabled: { type: Boolean, default: true }
     },
     // NEW: secret token for the counsellor's private calendar (.ics) subscription feed.
     calendarToken: {

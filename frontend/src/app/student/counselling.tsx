@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -53,12 +53,14 @@ export default function CounsellingDirectoryScreen() {
     <WellbeingPage contentContainerStyle={styles.page}>
       <ScreenBackButton fallback="/student/dashboard" label="Dashboard" />
       <PageHeading title="Find a counsellor" subtitle="Explore approved university counsellors and choose a time that works for you." />
-      <Link href="/student/appointments" asChild>
-        <Pressable accessibilityRole="button" style={styles.appointmentsLink}>
-          <Text style={styles.appointmentsLinkText}>View my appointments</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-      </Link>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/student/appointments')}
+        style={({ pressed }) => [styles.appointmentsLink, pressed && styles.pressed]}
+      >
+        <Text style={styles.appointmentsLinkText}>View my appointments</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
 
       {counsellors.length > 1 ? (
         <View style={styles.tools}>
@@ -98,27 +100,27 @@ export default function CounsellingDirectoryScreen() {
         <View style={styles.list}>
           <SectionHeading title="Approved counsellors" detail={`${visible.length} available profile${visible.length === 1 ? '' : 's'}`} />
           {visible.map((counsellor) => (
-            <Link
+            <Pressable
               key={counsellor._id}
-              href={{ pathname: '/student/counselling/[id]', params: { id: counsellor._id } }}
-              asChild
+              accessibilityRole="button"
+              accessibilityLabel={`${counsellor.name}, view profile and book`}
+              onPress={() => router.push({ pathname: '/student/counselling/[id]', params: { id: counsellor._id } })}
+              style={({ pressed }) => [styles.card, pressed && styles.pressed]}
             >
-              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-                <View style={styles.cardMain}>
-                  <View style={styles.avatar}><Text style={styles.avatarText}>{counsellor.name.trim().charAt(0).toUpperCase()}</Text></View>
-                  <View style={styles.copy}>
-                    <Text style={styles.name}>{counsellor.name}</Text>
-                    <Text style={styles.specialization}>{counsellor.specialization}</Text>
-                    <Text style={styles.qualification}>{counsellor.qualification}</Text>
-                  </View>
+              <View style={styles.cardMain}>
+                <View style={styles.avatar}><Text style={styles.avatarText}>{counsellor.name.trim().charAt(0).toUpperCase()}</Text></View>
+                <View style={styles.copy}>
+                  <Text style={styles.name}>{counsellor.name}</Text>
+                  <Text style={styles.specialization}>{counsellor.specialization}</Text>
+                  <Text style={styles.qualification}>{counsellor.qualification}</Text>
                 </View>
-                <View style={styles.chipRow}>
-                  <View style={styles.chip}><Text style={styles.chipText}>{counsellor.yearsOfExperience} yrs experience</Text></View>
-                  {counsellor.nextAvailableAt ? <View style={[styles.chip, styles.chipNext]}><Text style={[styles.chipText, styles.next]}>{nextLabel(counsellor.nextAvailableAt)}</Text></View> : null}
-                </View>
-                <View style={styles.cta}><Text style={styles.ctaText}>View profile & book</Text><Text style={styles.ctaArrow}>›</Text></View>
-              </Pressable>
-            </Link>
+              </View>
+              <View style={styles.chipRow}>
+                <View style={styles.chip}><Text style={styles.chipText}>{counsellor.yearsOfExperience} yrs experience</Text></View>
+                {counsellor.nextAvailableAt ? <View style={[styles.chip, styles.chipNext]}><Text style={[styles.chipText, styles.next]}>{nextLabel(counsellor.nextAvailableAt)}</Text></View> : null}
+              </View>
+              <View style={styles.cta}><Text style={styles.ctaText}>View profile & book</Text><Text style={styles.ctaArrow}>›</Text></View>
+            </Pressable>
           ))}
         </View>
       ) : null}
