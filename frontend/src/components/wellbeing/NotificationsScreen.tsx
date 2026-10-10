@@ -1,3 +1,4 @@
+// Shared notifications list for students and counsellors (booking updates, reminders and alerts).
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
