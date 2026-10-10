@@ -1,3 +1,4 @@
+// Admin profile: view and update the admin account's own details.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
