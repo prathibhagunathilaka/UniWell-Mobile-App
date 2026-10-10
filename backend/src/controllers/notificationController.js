@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const Notification = require("../models/Notification");
+const User = require("../models/User");
+
+const EXPO_TOKEN = /^Expo(nent)?PushToken\[[^\]]+\]$/;
 
 const listNotifications = async (req, res) => {
   try {
@@ -47,4 +50,48 @@ const markAllRead = async (req, res) => {
   }
 };
 
-module.exports = { listNotifications, getUnreadCount, markRead, markAllRead };
+// POST /api/notifications/push-token — body: { token, platform? }
+// A phone token belongs to one account at a time: it is removed from everyone else first.
+const registerPushToken = async (req, res) => {
+  const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
+  if (!EXPO_TOKEN.test(token)) {
+    return res.status(400).json({ message: "Invalid push token." });
+  }
+  const platform = typeof req.body?.platform === "string" ? req.body.platform.slice(0, 20) : "android";
+
+  try {
+    await User.updateMany({ "pushTokens.token": token }, { $pull: { pushTokens: { token } } });
+    await User.updateOne(
+      { _id: req.user.id },
+      { $push: { pushTokens: { $each: [{ token, platform, updatedAt: new Date() }], $slice: -5 } } }
+    );
+    return res.status(200).json({ message: "Push notifications enabled on this device." });
+  } catch (error) {
+    console.error("Push token save failed:", error.code || error.name);
+    return res.status(500).json({ message: "Unable to enable phone notifications right now." });
+  }
+};
+
+// DELETE /api/notifications/push-token — body: { token }
+const removePushToken = async (req, res) => {
+  const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
+  if (!token) {
+    return res.status(400).json({ message: "Push token is required." });
+  }
+  try {
+    await User.updateOne({ _id: req.user.id }, { $pull: { pushTokens: { token } } });
+    return res.status(200).json({ message: "Push notifications disabled on this device." });
+  } catch (error) {
+    console.error("Push token removal failed:", error.code || error.name);
+    return res.status(500).json({ message: "Unable to update phone notifications right now." });
+  }
+};
+
+module.exports = {
+  listNotifications,
+  getUnreadCount,
+  markRead,
+  markAllRead,
+  registerPushToken,
+  removePushToken
+};

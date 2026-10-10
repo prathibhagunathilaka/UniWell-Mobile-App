@@ -22,6 +22,7 @@ import {
   UserRole,
 } from '@/services/authService';
 import { readStoredAuthToken, removeStoredAuthToken, storeAuthToken } from '@/services/authStorage';
+import { unregisterPushToken } from '@/services/pushService';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -182,6 +183,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return response.message;
   }, []);
 
+  // Explicit sign-out by the person: stop phone notifications for this account first, then sign out.
+  const logout = useCallback(async () => {
+    await unregisterPushToken();
+    await signOut();
+  }, [signOut]);
+
   const value = useMemo<AuthContextValue>(() => ({
     user,
     token,
@@ -194,8 +201,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     login,
     registerStudent,
     registerCounsellor,
-    logout: signOut,
-  }), [user, token, loading, sessionNotice, authFlowStarted, beginAuthFlow, login, registerStudent, registerCounsellor, signOut]);
+    logout,
+  }), [user, token, loading, sessionNotice, authFlowStarted, beginAuthFlow, login, registerStudent, registerCounsellor, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

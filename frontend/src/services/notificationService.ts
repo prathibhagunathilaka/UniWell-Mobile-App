@@ -7,6 +7,8 @@ export type NotificationType =
   | 'booking_completed'
   | 'reminder_24h'
   | 'reminder_1h'
+  | 'reminder_5m'
+  | 'session_ongoing'
   | 'system';
 
 export type AppNotification = {
@@ -30,3 +32,16 @@ export const markNotificationRead = (id: string) =>
 
 export const markAllNotificationsRead = () =>
   apiFetch<{ message: string }>('/notifications/read-all', { method: 'PATCH' });
+
+// NEW: device push token (phone notifications). The backend stores it against the signed-in user.
+export const savePushToken = (token: string, platform: string) =>
+  apiFetch<{ message: string }>('/notifications/push-token', {
+    method: 'POST',
+    body: JSON.stringify({ token, platform }),
+  });
+
+export const removePushToken = (token: string) =>
+  apiFetch<{ message: string }>('/notifications/push-token', {
+    method: 'DELETE',
+    body: JSON.stringify({ token }),
+  });

@@ -12,15 +12,58 @@ const formatWhen = (date) =>
     minute: "2-digit"
   });
 
-const REMINDER_TYPES = new Set(["reminder_24h", "reminder_1h"]);
+const REMINDER_TYPES = new Set(["reminder_24h", "reminder_1h", "reminder_5m", "session_ongoing"]);
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
-// Creates an in-app notification and, best-effort, an email copy.
+// Sends a phone (push) notification through Expo's push service. Best-effort: never throws.
+// Tokens that Expo reports as no longer valid are removed from the user.
+const sendPush = async (userId, tokens, { title, body, data }) => {
+  if (!tokens.length) return;
+  try {
+    const messages = tokens.map((token) => ({
+      to: token,
+      title,
+      body,
+      data,
+      sound: "default",
+      channelId: "default",
+      priority: "high"
+    }));
+
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(messages)
+    });
+    const result = await response.json().catch(() => null);
+    const tickets = Array.isArray(result?.data) ? result.data : [];
+
+    const dead = [];
+    tickets.forEach((ticket, index) => {
+      if (ticket?.status === "error") {
+        console.error("Push ticket error:", ticket.details?.error || ticket.message);
+        if (ticket.details?.error === "DeviceNotRegistered") dead.push(tokens[index]);
+      }
+    });
+
+    if (dead.length) {
+      await User.updateOne({ _id: userId }, { $pull: { pushTokens: { token: { $in: dead } } } });
+    }
+  } catch (error) {
+    console.error("Push send failed:", error.code || error.name);
+  }
+};
+
+// Creates an in-app notification, sends a phone push, and, best-effort, an email copy.
 // Respects the person's Settings: reminders follow "Session reminders", everything else
 // follows "Push notifications". Never throws: a failed notification must not break a booking.
 const notify = async ({ userId, type, title, body, appointmentId = null, email = false }) => {
   let user = null;
   try {
-    user = await User.findById(userId).select("email preferences").lean();
+    user = await User.findById(userId).select("email preferences +pushTokens").lean();
   } catch (error) {
     console.error("Notification preference lookup failed:", error.code || error.name);
   }
@@ -29,11 +72,23 @@ const notify = async ({ userId, type, title, body, appointmentId = null, email =
   const allowed = REMINDER_TYPES.has(type) ? prefs.remindersEnabled !== false : prefs.pushEnabled !== false;
   if (!allowed) return;
 
+  let created = null;
   try {
-    await Notification.create({ userId, type, title, body, appointmentId });
+    created = await Notification.create({ userId, type, title, body, appointmentId });
   } catch (error) {
     console.error("Notification create failed:", error.code || error.name);
   }
+
+  const tokens = (user?.pushTokens || []).map((entry) => entry.token).filter(Boolean);
+  await sendPush(userId, tokens, {
+    title,
+    body,
+    data: {
+      type,
+      appointmentId: appointmentId ? String(appointmentId) : null,
+      notificationId: created ? String(created._id) : null
+    }
+  });
 
   if (!email || !user?.email || !hasMailConfiguration()) return;
   try {

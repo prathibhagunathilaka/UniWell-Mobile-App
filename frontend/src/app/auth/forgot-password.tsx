@@ -1,8 +1,9 @@
-import { Link } from 'expo-router';
+import { Href, Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AuthButton, AuthField, AuthLinkText, AuthMessage, AuthPage } from '@/components/auth/AuthUI';
+import { getAuthenticatedHome, useAuth } from '@/contexts/AuthContext';
 import {
   requestPasswordReset,
   resetPassword as resetPasswordRequest,
@@ -13,6 +14,10 @@ import { isValidEmail, isValidPassword } from '@/services/authValidation';
 type RecoveryStep = 'email' | 'otp' | 'password';
 
 export default function ForgotPasswordScreen() {
+  // Signed-in people reach this screen from Settings > Privacy & security > Change password.
+  // For them "back" must return to the app: linking to /auth/login would bounce a signed-in user
+  // straight back out and re-mount the whole navigator in a loop (Maximum update depth exceeded).
+  const { user } = useAuth();
   const [step, setStep] = useState<RecoveryStep>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -93,7 +98,11 @@ export default function ForgotPasswordScreen() {
       : 'Choose a new password for your UniWell account.';
 
   return (
-    <AuthPage title={title} subtitle={subtitle}>
+    <AuthPage
+      title={title}
+      subtitle={subtitle}
+      back={user ? { fallback: getAuthenticatedHome(user) as Href, label: 'Back' } : undefined}
+    >
       {step === 'email' ? (
         <AuthField
           label="Email"
@@ -131,9 +140,11 @@ export default function ForgotPasswordScreen() {
       {step === 'email' ? <AuthButton title="Send verification code" onPress={() => void submitEmail()} loading={loading} /> : null}
       {step === 'otp' ? <AuthButton title="Verify code" onPress={() => void submitOtp()} loading={loading} /> : null}
       {step === 'password' ? <AuthButton title="Update password" onPress={() => void submitPassword()} loading={loading} /> : null}
-      <Link href="/auth/login" asChild>
-        <Pressable><AuthLinkText>Back to sign in</AuthLinkText></Pressable>
-      </Link>
+      {!user ? (
+        <Link href="/auth/login" asChild>
+          <Pressable><AuthLinkText>Back to sign in</AuthLinkText></Pressable>
+        </Link>
+      ) : null}
     </AuthPage>
   );
 }
