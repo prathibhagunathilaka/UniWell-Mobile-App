@@ -1,56 +1,165 @@
-# Welcome to your Expo app 👋
+# UniWell – Mental Health Check-in & Counsellor Booking Mobile Application
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+UniWell is a mobile application designed to support university students' mental well-being by providing daily mental health check-ins, self-help resources, emergency support information, and counsellor appointment booking. The application also provides counsellors with appointment management features and administrators with counsellor approval and reporting capabilities.
 
-## Get started
+## Features
 
-1. Install dependencies
+### Student Features
+- Student registration and login.
+- Email OTP verification.
+- Daily mental health check-ins.
+- View check-in results and history.
+- Access self-help resources.
+- View emergency support information.
+- Browse approved counsellors and book available counselling sessions.
+- Manage profile information.
 
-   ```bash
-   npm install
-   ```
+### Counsellor Features
+- Counsellor registration and approval workflow.
+- Manage profile information.
+- Manage appointment availability.
+- View and manage counselling appointments.
+- Access relevant student appointment information.
+- Manage counselling resources, where supported.
 
-2. Start the app
+### University Administrator Features
+- Review and approve pending counsellor registrations.
+- Manage counsellor access.
+- View reports and relevant system information.
+- Access anonymised reporting features, where implemented.
 
-   ```bash
-   npx expo start
-   ```
+## Technology Stack
 
-In the output, you'll find options to open the app in a
+**Frontend**
+- React Native
+- Expo
+- JavaScript / TypeScript, depending on the module implementation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Backend**
+- Node.js
+- Express.js
+- REST API
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+**Database**
+- MongoDB Atlas
 
-## Get a fresh project
+**Authentication and Security**
+- JSON Web Tokens (JWT)
+- Password hashing
+- Email OTP verification
+- Role-based access control
 
-When you're ready, run:
+## Project Structure
 
-```bash
-npm run reset-project
+```text
+UniWell-Mobile-App/
+├── frontend/       # React Native / Expo application
+├── backend/        # Node.js / Express API
+├── README.md
+└── .gitignore
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+*The structure may vary depending on the current repository version.*
 
-### Other setup steps
+## Prerequisites
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Make sure you have installed:
 
-## Learn more
+- Node.js and npm
+- Git
+- Expo Go or an Android emulator
+- MongoDB Atlas account or an accessible MongoDB instance
+- A code editor such as Visual Studio Code
 
-To learn more about developing your project with Expo, look at the following resources:
+## Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 1. Clone the Repository
 
-## Join the community
+```bash
+git clone https://github.com/prathibhagunathilaka/UniWell-Mobile-App.git
+cd UniWell-Mobile-App
+```
 
-Join our community of developers creating universal apps.
+### 2. Set Up the Backend
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Open a terminal and run:
+
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file in the `backend` directory using the project's `.env.example` file as a reference.
+
+Configure the required environment variables, including the MongoDB connection string, JWT secret, and email/SMTP settings required by the application.
+
+Start the backend:
+
+```bash
+node server.js
+```
+
+The backend should start on the port configured in the environment variables, commonly port `5000`.
+
+### 3. Set Up the Frontend
+
+Open a separate terminal:
+
+```bash
+cd frontend
+npm install
+```
+
+Configure the frontend API URL in the appropriate environment file. For example:
+
+```env
+EXPO_PUBLIC_API_URL=http://YOUR_COMPUTER_IP:5000/api
+```
+
+Replace `YOUR_COMPUTER_IP` with your computer's local IP address when testing on a physical phone. Ensure that the phone and computer can communicate over the network.
+
+### 4. Run the Mobile Application
+
+From the `frontend` directory, run:
+
+```bash
+npx expo start
+```
+
+Scan the QR code using Expo Go, or open the application using a supported emulator or development build.
+
+## Environment Configuration
+
+Do not commit passwords, API secrets, MongoDB credentials, email app passwords, or the real `.env` file to GitHub.
+
+Use `.env.example` to document the required configuration variables without including real secret values.
+
+## Security and Privacy
+
+UniWell is designed to support student privacy and protect sensitive mental health information. Authentication, access restrictions, and anonymised reporting should be verified through testing to ensure that users can access only the information permitted by their roles.
+
+## Testing
+
+Testing activities may include:
+
+- Authentication and email OTP verification.
+- Mental health check-in submission and history.
+- Counsellor availability and appointment booking.
+- Appointment cancellation and status management.
+- Role-based access control.
+- Self-help resources and emergency support.
+- Administrator counsellor approval and reporting.
+- Usability evaluation with representative users.
+
+Refer to the project report and test documentation for the test cases, results, and known limitations.
+
+## Academic Project
+
+**Module:** IT3060 – Human Computer Interaction (HCI)  
+**Project:** UniWell – Mental Health Check-in & Counsellor Booking Mobile Application
+
+Developed as a university group project to improve access to mental health support for university students.
+
+## License
+
+This project was developed for academic purposes. Add a formal license if the project is intended for public reuse or distribution.
